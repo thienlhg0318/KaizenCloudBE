@@ -7,6 +7,9 @@ header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Expose-Headers: x-total-count');
 header('Content-Type: application/json; charset=utf-8');
 require 'conn.php';
+require_once 'C:\wamp\www\KaizenCloud\PHPExcel\Classes\PHPExcel.php';
+include 'C:\wamp\www\KaizenCloud\PHPMailer\PHPMailerAutoload.php';
+
 error_reporting(0);
 session_start();
 // if (isset($_GET['getFactory'])) {
@@ -143,6 +146,19 @@ function getCharColumn($eipConnect, $type, $year, $dept)
     return $obj;
 }
 
+function getEmail($conn_eip, $col, $type) {
+    $qry = "SELECT email 
+            FROM PPH_Kaizen_Email_Setup
+            WHERE $col = '$type'";  // thêm ''
+
+    $rs = odbc_exec($conn_eip, $qry);
+    $obj = array();
+
+    while ($result = odbc_fetch_object($rs)) {
+        $obj[] = $result->email; // chỉ lấy cột email
+    }
+    return $obj;
+}
 
 //Lấy Giá trị cho form add Improvement
 // function getApartOfImprovement($eipConnect,$id){
@@ -165,9 +181,12 @@ function getCharColumn($eipConnect, $type, $year, $dept)
             $mail->SMTPAuth   = true;
             $mail->Username   = 'thienlhg0318@gmail.com'; // Gmail của bạn
             $mail->Password   = 'xwqd feja jtbn vojn';   // App password Gmail
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            //$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
-            $mail->CharSet    = 'UTF-8';  
+            $mail->CharSet    = 'UTF-8';
+            
+            
+        
 
             // Người gửi
             $mail->setFrom('thienlhg0318@gmail.com');
@@ -220,18 +239,60 @@ function getCharColumn($eipConnect, $type, $year, $dept)
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body    = $body;
-            
-            $mail->send();
 
-            
-            @unlink($tempFile); // xóa file, dùng @ để tránh lỗi nếu không tồn tại
-        
+            $mail->send();
 
             return ['Msg' => 'Gửi email thành công'];
         } catch (Exception $e) {
             return ['Msg' => 'Gửi email thất bại.'];
         }
     }
+
+function generateExcelReport($data){
+
+    $objPHPExcel= new PHPExcel;
+    $provinceSheet = $objPHPExcel->setActiveSheetIndex(0);
+    
+   
+    $provinceSheet->setCellValue("A1", "DEPARTMENT")
+                 ->setCellValue("B1", "TARGET")
+                 ->setCellValue("C1", "SUBMITTED")
+                 ->setCellValue("D1", "DONE")
+                 ->setCellValue("E1", "ON-GOING")
+                 ->setCellValue("F1", "FAILED")
+                 ->setCellValue("G1", "% ACHIEVE");
+    
+    
+    $i = 2; 
+    
+    foreach ($data as $value) {
+        $provinceSheet
+                 ->setCellValue("A$i", $value['deptName']) 
+                 ->setCellValue("B$i", $value['target'])
+                 ->setCellValue("C$i", $value['totalCases'])
+                 ->setCellValue("D$i", $value['doneCases'])
+                 ->setCellValue("E$i", $value['ongoingCases'])
+                 ->setCellValue("F$i", $value['failedCases'])
+                 ->setCellValue("G$i", $value['psAchieve']);
+        $i++;
+    }
+    
+   
+    foreach(range('A','E') as $columnID) {
+        $provinceSheet->getColumnDimension($columnID)->setAutoSize(true);
+    }
+    
+   
+    $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+    
+    
+    $filename = 'report_' . date('Y-m-d_H-i-s') . '.xlsx';
+    
+    
+    $objWriter->save($filename);
+    
+    return $filename;
+}
 
 
 
@@ -894,7 +955,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         echo json_encode($data);
     }
 
-        if ($_GET['api'] == 'getReportOfYearMonth') {
+    if ($_GET['api'] == 'getReportOfYearMonth') {
 
         $year = $_GET['year'];
         $month = $_GET['month'];
@@ -917,6 +978,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
                     JOIN PPH_Kaizen_Adjustment_Department k
                         ON k.deptcode = r.Dept
                     WHERE YEAR(KDate) = $year AND MONTH(KDate) = $month
+                    AND T.year = $year AND T.month = $month
                     GROUP BY K.deptname, T.target";
                         
         $result = odbc_exec($conn_eip, $query);
@@ -934,7 +996,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     if ($_GET['api'] === 'getMonthDoneEmail') {
   
         $year = $_GET['year'];
-        json_encode(['hshshs']);
+    
         try {
             $sql = "
                 SELECT 
@@ -965,6 +1027,43 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
                 'error' => $e->getMessage()
             ]);
         }
+    }
+    //get dept set up
+
+    if( $_GET['api'] === 'getDeptSetup') {
+        $query = "
+            SELECT  S.kaizen_dept as id,
+            D.deptname as name
+            FROM PPH_Kaizen_Email_Setup S
+            JOIN PPH_Kaizen_Adjustment_Department D
+            ON S.kaizen_dept = D.deptcode
+        ";
+        $result = odbc_exec($conn_eip, $query);
+        $data = array();
+        while ($row = odbc_fetch_array($result)) {
+            $data[] = $row;
+        }
+        http_response_code(200);
+        echo json_encode($data);
+    }
+
+    if($_GET['api'] === 'getAllEmailSetup') {
+        $query = "
+            SELECT 
+                id,
+                userID,
+                kaizen_dept as departmentId,
+                email, 
+                trial_stage,
+                auto_report
+            FROM PPH_Kaizen_Email_Setup ";
+        $result = odbc_exec($conn_eip, $query);
+        $data = array();
+        while ($row = odbc_fetch_array($result)) {
+            $data[] = $row;
+        }
+        http_response_code(200);
+        echo json_encode($data);
     }
 
 }
@@ -1566,31 +1665,230 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
     }
-    if ($_GET['api'] === 'sendEmailReport'){
+    if ($_GET['api'] === 'sendEmailReport') {
         $json = file_get_contents("php://input");
-        $month = $_GET['month'];
+        $month = isset($_GET['month']) ? (int)$_GET['month'] : null;
+        $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
         // Chuyển JSON thành mảng
         $data = json_decode($json, true);
+        echo json_encode($data);
 
-        //$xlc = generateExcelReport($data);
-
-        $to =['thien879811@gmail.com'];
-        $cc = null;
-        $subject = 'test email';
-        $body = 'Đây là nội dung email test';
-
-        $sendEmail = create_email($to, $cc, $subject, $body, $xlc);
-
-        if(!empty($month)){
-            $sql = "UPDATE PPH_Kaizen_Adjustment_Report 
-            SET status = 'DONE' WHERE MONTH (KDate) = $month ";
-            $rs = odbc_exec($conn_eip, $sql);
+        $actual = 0;
+        $target = 0;
+        
+        foreach ($data as $key => $value) {
+            $actual += $value['totalCases'];
+            $target += $value['target'];
         }
 
+        $diff = $target > 0 ? round((($actual / $target) - 1) * 100, 2) : 0;
+
+        // Tạo file Excel
+        $xlc = generateExcelReport($data);
+
+        // lấy dử liệu email từ data
+        // $toEmail = getEmail($conn_eip, "trial_stage", "TO");
+        // $ccEmail = getEmail($conn_eip, "auto_report", "CC");
+
+        // echo json_encode($toEmail);
+        // echo json_encode($ccEmail);
+
+        // Thông tin email
+        $to = ['thien879811@gmail.com'];
+        $cc = null;
+
+
+
+        $subject = "Kaizen Monthly Report - {$year} {$month}";
+        $body = "<p>Dear All,</p>
+        <p>Vui lòng nhận báo cáo Kaizen tháng <b>{$month} {$year}</b>. 
+        Chi tiết của báo cáo vui lòng xem ở tệp đính kèm.</p>
+
+        <p><b>KAIZEN THÁNG {$month}:</b></p>
+
+        <table border='1' cellpadding='6' cellspacing='0' style='border-collapse:collapse; text-align:center;'>
+            <tr style='background:#f2f2f2;'>
+                <th>Đơn vị</th>
+                <th>Mục tiêu</th>
+                <th>Thực tế</th>
+                <th>Chênh lệch (%)</th>
+            </tr>
+            <tr>
+                <td>LYV</td>
+                <td>{$target}</td>
+                <td>{$actual}</td>
+                <td>{$diff}%</td>
+            </tr>
+        </table>
+
+        <br>
+        <p><i>(Chênh lệch = (thực tế/mục tiêu - 1) x 100%)</i></p>
+
+        <br>
+        <p>Thank and best regards!</p>
+
+        <hr>
+        <p>
+            <b>Triệu Phước Toàn</b><br>
+            Phone: +84358269547<br>
+            Dept: GME-Lac Ty 2 Co, Ltd.<br>
+            Lot B1, B2 Tan Thu Thanh Industrial Zone, Chau Thanh A District, Hau Giang Province
+        </p>";
+
+        // Gửi email
+        $sendEmail = create_email($to, $cc, $subject, $body, $xlc);
+
+        // Xóa file Excel sau khi gửi
+        if (file_exists($xlc)) {
+            unlink($xlc);
+        }
+
+        // Nếu có month thì update DB
+        if (!empty($month)) {
+            $sql = "
+                UPDATE PPH_Kaizen_Adjustment_Report
+                SET status = 'DONE'
+                WHERE MONTH(KDate) = $month
+                AND YEAR(KDate) = YEAR(GETDATE())
+            ";
+            $rs = odbc_exec($conn_eip, $sql);
+
+        }
+
+        // Chỉ trả về 1 JSON hợp lệ
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($sendEmail);
+    }
+    if ($_GET['api'] === 'sendEmail') {
+        $json = file_get_contents("php://input");
+        $data = json_decode($json, true);
+        $departmentsID = $data['departmentsID'];
+        $to = $data['to'];
+        $cc = $data['cc'];
+        $id_report = $data['id_report'];
+        // Kiểm tra xem departmentsID có phải là mảng hay không , chuyển thành chuỗi
+        if (is_array($departmentsID)) {
+            $departmentsID = "'" . implode("','", $departmentsID) . "'";
+        }
+
+        // Lấy thông tin improvement từ data
+
+        $imQuery = "SELECT *  FROM PPH_Kaizen_Adjustment_Report WHERE ID = '" . $id_report . "'";
+        $imResult = odbc_exec($conn_eip, $imQuery);
+        if (!$imResult) {
+            // Lấy thông tin lỗi
+            $error = odbc_errormsg($conn_eip);
+            die("SQL Error: " . $error . " | Query: " . $imQuery);
+        }
+
+        $dtImprovemrnt = odbc_fetch_array($imResult);
+
+        if (!$dtImprovemrnt) {
+            echo json_encode(['Msg' => 'Không tìm thấy thông tin cải tiến.']);
+            return;
+        }
+        $nImprove = $dtImprovemrnt['Title_Improve'];
+        $KDate = $dtImprovemrnt['KDate'];
+
+        $subject = "Thông tin cải tiến: Tham gia buổi thử nghiệm ý tưởng đề xuất cải tiến";
+        $body ="
+            <p>Dear all,</p>
+            <p>Vui lòng xem thông tin bên dưới là thông tin thử nghiệm của đề xuất cải tiến. 
+            Mời các đơn vị liên quan bên dưới tham gia trực tiếp thử nghiệm.</p>
+
+            <p><b>Vấn đề cải tiến:</b> <span style='color:orange;'>$nImprove</span><br>
+            <b>Đơn vị tham gia:</b> <span style='color:orange;'>$departmentsID</span><br>
+            <b>Thời gian:</b> <span style='color:orange;'>$KDate</span><br>
+            <b>Địa điểm:</b> ..............................................</p>
+
+            <p>Kính mong các đơn vị liên quan tham gia đúng thời gian buổi thử nghiệm.<br>
+            Nếu anh/chị có thắc mắc vui lòng liên hệ FME.</p>
+
+            <p>Số điện thoại nội bộ: <span style='color:orange;'>[số điện thoại theo từng nhà máy]</span></p>
+
+            <p>
+                <a href='http://192.168.30.19/KaizenCloud/4/KaizenCloud/rawData/Med?id=$id_report'>
+                    Đường dẫn Kaizen
+                </a>
+            </p>
+
+            <p>
+                <img src='https://via.placeholder.com/600x250.png?text=Hinh+anh+minh+hoa'
+                    alt='Hình ảnh minh họa' width='600'>
+            </p>
+
+            <p>Xin cảm ơn,<br>FME</p>
+            <p><i>Thank and best regards!</i></p>
+
+            <hr>
+            <p>
+                <b>Triệu Phước Toàn</b><br>
+                Phone: +84358269547<br>
+                Dept: GME-Lac Ty 2 Co, Ltd.<br>
+                Lot B1, B2 Tan Thu Thanh Industrial Zone, Chau Thanh A District, Hau Giang Province
+            </p>
+            ";
+
+
+
+        $qry = "SELECT Dept 
+            FROM PPH_Kaizen_Adjustment_Department_CFM 
+            WHERE Dept IN ($departmentsID)
+        ";
+
+        $rs = odbc_exec($conn_eip, $qry);
+
+        if (!$rs) {
+            // Lấy thông tin lỗi
+            $error = odbc_errormsg($conn_eip);
+            die("SQL Error: " . $error . " | Query: " . $qry);
+        }
+
+        $departments = [];
+        while ($row = odbc_fetch_array($rs)) {
+            $departments[] = $row['Dept'];
+        }
+
+
+        // đơn vị được chọn gửi email không có trong db thì gửi email
+        // Lấy danh sách đơn vị từ request
+        $requestedDepartments = is_array($data['departmentsID']) ? $data['departmentsID'] : [];
+        // Lấy danh sách đơn vị đã có trong DB
+        $existingDepartments = $departments;
+
+        // Tìm các đơn vị chưa có trong DB (chỉ gửi email cho các đơn vị này)
+        $departmentsToSend = array_diff($requestedDepartments, $existingDepartments);
+
+        // Nếu không có đơn vị nào cần gửi thì trả về thông báo
+        if (empty($departmentsToSend)) {
+            $sendEmail = ['Msg' => 'Không có đơn vị nào cần gửi email.'];
+        } else {
+            if (empty($to)) {
+            $sendEmail = ['Msg' => 'Không tìm thấy email của các đơn vị cần gửi.'];
+            } else {
+
+            // Thêm từng đơn vị vào bảng PPH_Kaizen_Adjustment_Department_CFM
+            // foreach ($departmentsToSend as $dept) {
+            //     $qr = "INSERT INTO PPH_Kaizen_Adjustment_Department_CFM (ID_Report, Dept, Status)
+            //     VALUES ('" . $data['id'] . "', '" . $dept . "', '1')";
+            //     odbc_exec($conn_eip, $qr);
+            // }
+            // $cc = $data['cc']; // Nếu có CC thì lấy ở đây
+            $cc = null;
+            $sendEmail = create_email($to, $cc, $subject, $body);
+            }
+        }
+        // Chỉ trả về 1 JSON hợp lệ
+        header('Content-Type: application/json; charset=utf-8');
         echo json_encode($sendEmail);
     }
 
+    if($_GET['api'] == 'diffDepartmentCFM') {
+        $json = file_get_contents("php://input");
+        $data = json_decode($json, true);
+        echo json_encode($data);
+    }
 }
 
 // Handle DELETE request from ReactJS
