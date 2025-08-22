@@ -40,7 +40,7 @@ function fetch_to_array($ID, $server = "192.168.30.4", $dbname = "HRIS", $id = "
     while (!$rs->EOF) {
         $tmp_arr[] = null;
         for ($i = 0; $i < $num_columns; $i++) {
-            $tmp_arr[(string)$rs->Fields[$i]->Name] = (string)$rs->Fields[$i]->Value;
+            $tmp_arr[(string) $rs->Fields[$i]->Name] = (string) $rs->Fields[$i]->Value;
         }
         unset($tmp_arr[0]);
         array_push($data, $tmp_arr);
@@ -111,7 +111,7 @@ function getLine($eipConnect)
     $result_line = odbc_exec($eipConnect, $query_line);
     $obj = array();
     while ($result = odbc_fetch_object($result_line)) {
-        $obj[] =  $result;
+        $obj[] = $result;
     }
     return $obj;
 }
@@ -122,7 +122,7 @@ function getEventOfYear($eipConnect, $year, $month)
     $result_line = odbc_exec($eipConnect, $query_line);
     $obj = array();
     while ($result = odbc_fetch_object($result_line)) {
-        $obj[] =  $result;
+        $obj[] = $result;
     }
     return $obj;
 }
@@ -141,12 +141,13 @@ function getCharColumn($eipConnect, $type, $year, $dept)
     $result_line = odbc_exec($eipConnect, $query_line);
     $obj = array();
     while ($result = odbc_fetch_object($result_line)) {
-        $obj[] = (int)$result->sl;
+        $obj[] = (int) $result->sl;
     }
     return $obj;
 }
-
-function getEmail($conn_eip, $col, $type) {
+/// lấy email auto gửi
+function getEmail($conn_eip, $col, $type)
+{
     $qry = "SELECT email 
             FROM PPH_Kaizen_Email_Setup
             WHERE $col = '$type'";  // thêm ''
@@ -171,129 +172,184 @@ function getEmail($conn_eip, $col, $type) {
 //     return $obj;
 // }
 
-    function create_email($to, $cc, $subject, $body, $tempFile = null)
-    {
-        $mail = new PHPMailer(true);
-        try {
-            // Cấu hình SMTP
-            $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = 'thienlhg0318@gmail.com'; // Gmail của bạn
-            $mail->Password   = 'xwqd feja jtbn vojn';   // App password Gmail
-            //$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = 587;
-            $mail->CharSet    = 'UTF-8';
-            
-            
-        
+function create_email($to, $cc, $subject, $body, $tempFile = null)
+{
+    $mail = new PHPMailer(true);
+    try {
+        // Cấu hình SMTP
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'thienlhg0318@gmail.com'; // Gmail của bạn
+        $mail->Password = 'xwqd feja jtbn vojn';   // App password Gmail
+        //$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
+        $mail->CharSet = 'UTF-8';
 
-            // Người gửi
-            $mail->setFrom('thienlhg0318@gmail.com');
 
-            if(!empty($to)){
-                if(is_array($to)){
-                    // Danh sách TO
-                    $toList = $to;
-                    foreach ($toList as $to) {
-                        $mail->addAddress($to);
-                    }
-                }else{
-                    $mail -> addAddress($to);
+
+
+        // Người gửi
+        $mail->setFrom('thienlhg0318@gmail.com');
+
+        if (!empty($to)) {
+            if (is_array($to)) {
+                // Danh sách TO
+                $toList = $to;
+                foreach ($toList as $to) {
+                    $mail->addAddress($to);
                 }
-            }else{
-                return "Vui lòng nhập email !";
+            } else {
+                $mail->addAddress($to);
             }
-
-
-
-            if (!empty($cc)) {
-                // Danh sách CC
-                if(is_array($cc)){
-                    $ccList = $cc;
-                    foreach ($ccList as $cc){
-                        $mail -> addCC($cc);
-                    }
-                }else{
-                    $mail->addCC($cc);
-                } 
-            }
-
-
-            // Đính kèm file vào email
-            if (!empty($tempFile)) {
-                if (is_array( $tempFile)) {
-                    foreach ( $tempFile as $file) {
-                        if (file_exists($file)) {
-                            $mail->addAttachment($file, basename($file));
-                        }
-                    }
-                } else {
-                    if (file_exists($tempFile)) {
-                        $mail->addAttachment( $tempFile, basename( $tempFile));
-                    }
-                }
-            }
-
-            // Nội dung
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body    = $body;
-
-            $mail->send();
-
-            return ['Msg' => 'Gửi email thành công'];
-        } catch (Exception $e) {
-            return ['Msg' => 'Gửi email thất bại.'];
+        } else {
+            return "Vui lòng nhập email !";
         }
+
+
+
+        if (!empty($cc)) {
+            // Danh sách CC
+            if (is_array($cc)) {
+                $ccList = $cc;
+                foreach ($ccList as $cc) {
+                    $mail->addCC($cc);
+                }
+            } else {
+                $mail->addCC($cc);
+            }
+        }
+
+
+        // Đính kèm file vào email
+        if (!empty($tempFile)) {
+            if (is_array($tempFile)) {
+                foreach ($tempFile as $file) {
+                    if (file_exists($file)) {
+                        $mail->addAttachment($file, basename($file));
+                    }
+                }
+            } else {
+                if (file_exists($tempFile)) {
+                    $mail->addAttachment($tempFile, basename($tempFile));
+                }
+            }
+        }
+
+        // Nội dung
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body = $body;
+
+        $mail->send();
+
+        return ['Msg' => 'Gửi email thành công'];
+    } catch (Exception $e) {
+        return ['Msg' => 'Gửi email thất bại.'];
+    }
+}
+
+function generateExcelReport($data, $month = '', $year = '')
+{
+    $objPHPExcel = new PHPExcel();
+    $sheet = $objPHPExcel->setActiveSheetIndex(0);
+
+    // Title row (A1:G1)
+    if (!empty($month) && !empty($year)) {
+        $monthYear = $month . '/' . $year;
+    } else {
+        $monthYear = date('F Y');
+    }
+    $sheet->mergeCells('A1:G1');
+    $sheet->setCellValue('A1', "LHG KAIZEN MONTHLY REPORT $monthYear");
+    $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+    $sheet->getStyle('A1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER)
+        ->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+
+    $headers = [
+        'A2' => 'Department',
+        'B2' => 'Target',
+        'C2' => 'Submitted',
+        'D2' => 'Done',
+        'E2' => 'On_Going',
+        'F2' => 'Failed Cases',
+        'G2' => '% ACHIEVE'
+    ];
+    foreach ($headers as $col => $val) {
+        $sheet->setCellValue($col, $val);
+    }
+    $sheet->getStyle('A2:G2')->getFont()->setBold(true);
+    $sheet->getStyle('A2:G2')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER)
+        ->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+    $sheet->getStyle('A2:G2')->applyFromArray([
+        'fill' => [
+            'type' => PHPExcel_Style_Fill::FILL_SOLID,
+            'color' => ['rgb' => 'B4C6E7']
+        ],
+        'borders' => [
+            'allborders' => ['style' => PHPExcel_Style_Border::BORDER_THIN]
+        ]
+    ]);
+
+    // Data rows (A4:G...)
+    $row = 3;
+    foreach ($data as $idx => $value) {
+        $sheet->setCellValue("A$row", $value['deptName'])
+            ->setCellValue("B$row", $value['target'])
+            ->setCellValue("C$row", $value['totalCases'])
+            ->setCellValue("D$row", $value['doneCases'])
+            ->setCellValue("E$row", $value['ongoingCases'])
+            ->setCellValue("F$row", $value['failedCases'])
+            ->setCellValue("G$row", number_format($value['psAchieve'], 2) . '%');
+
+        // Center align and border
+        $sheet->getStyle("A$row:G$row")->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER)
+            ->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+        $sheet->getStyle("A$row:G$row")->applyFromArray([
+            'borders' => [
+                'allborders' => ['style' => PHPExcel_Style_Border::BORDER_THIN]
+            ]
+        ]);
+        // Highlight last row (total)
+        if ($idx === count($data) - 1) {
+            $sheet->getStyle("A$row:G$row")->getFont()->setBold(true);
+            $sheet->getStyle("A$row:G$row")->applyFromArray([
+                'fill' => [
+                    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                    'color' => ['rgb' => 'D9D9D9']
+                ]
+            ]);
+        }
+        $row++;
     }
 
-function generateExcelReport($data){
+    // Auto width columns
+    foreach (range('A', 'G') as $col) {
+        $sheet->getColumnDimension($col)->setAutoSize(true);
+    }
 
-    $objPHPExcel= new PHPExcel;
-    $provinceSheet = $objPHPExcel->setActiveSheetIndex(0);
-    
-   
-    $provinceSheet->setCellValue("A1", "DEPARTMENT")
-                 ->setCellValue("B1", "TARGET")
-                 ->setCellValue("C1", "SUBMITTED")
-                 ->setCellValue("D1", "DONE")
-                 ->setCellValue("E1", "ON-GOING")
-                 ->setCellValue("F1", "FAILED")
-                 ->setCellValue("G1", "% ACHIEVE");
-    
-    
-    $i = 2; 
-    
-    foreach ($data as $value) {
-        $provinceSheet
-                 ->setCellValue("A$i", $value['deptName']) 
-                 ->setCellValue("B$i", $value['target'])
-                 ->setCellValue("C$i", $value['totalCases'])
-                 ->setCellValue("D$i", $value['doneCases'])
-                 ->setCellValue("E$i", $value['ongoingCases'])
-                 ->setCellValue("F$i", $value['failedCases'])
-                 ->setCellValue("G$i", $value['psAchieve']);
-        $i++;
-    }
-    
-   
-    foreach(range('A','E') as $columnID) {
-        $provinceSheet->getColumnDimension($columnID)->setAutoSize(true);
-    }
-    
-   
+    // Freeze header
+    $sheet->freezePane('A4');
+
+    // Save file
+    $filename = 'Kaizen_Report_' . date('Y-m-d_H-i-s') . '.xlsx';
     $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
-    
-    
-    $filename = 'report_' . date('Y-m-d_H-i-s') . '.xlsx';
-    
-    
     $objWriter->save($filename);
-    
+
     return $filename;
 }
 
+
+function updateStatus($conn_eip, $id, $col, $status)
+{
+    $qr = "UPDATE PPH_Kaizen_Adjustment_Report SET $col = '$status' WHERE ID = '$id'";
+    $result = odbc_exec($conn_eip, $qr);
+    if ($result) {
+        return ['Msg' => 'Cập nhật trạng thái thành công'];
+    } else {
+        return ['Msg' => 'Cập nhật trạng thái thất bại: ' . odbc_errormsg($conn_eip)];
+    }
+}
 
 
 
@@ -306,7 +362,7 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 // Handle GET request from ReactJS
 if ($_SERVER["REQUEST_METHOD"] === "GET") {
     if ($_GET['api'] == 'getInput') {
-        $result = (object)[
+        $result = (object) [
             'FACTORY' => getFactory($conn_eip),
             'POSITION' => getPosition($conn_eip),
             'PROBLEM' => getProblem($conn_eip),
@@ -346,7 +402,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and Dept ='" . $dept . "' and PCI_Status is null  ";
         } elseif ($type == "" && $dept == "All" && $status == "REQUIRECF") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and PCI_Status is null  ";
-        } elseif ($type == "" && $dept == "All"  && $status != "All") {
+        } elseif ($type == "" && $dept == "All" && $status != "All") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and PCI_Status = '" . $status . "'";
         } elseif ($type == "" && $dept == "All" && $status == "All") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'";
@@ -357,6 +413,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and Problem_Improve = '" . $type . "'";
         }
         $rs = odbc_exec($conn_eip, $sql);
+
 
         $total = odbc_result($rs, 1);
         //
@@ -381,7 +438,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $recordQuery = odbc_exec($conn_eip, $getDataRaw) or die(odbc_errormsg());
         while ($result = odbc_fetch_array($recordQuery)) {
             $dataArr[] = $result;
-        };
+        }
+        ;
         header('x-total-count: ' . $total);
         echo json_encode($dataArr);
     }
@@ -411,7 +469,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and Dept ='" . $dept . "' and Quality is null and PCI_Status = 'DONE' ";
         } elseif ($type == "" && $dept == "All" && $status == "REQUIRECF") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and Quality is null and PCI_Status = 'DONE' ";
-        } elseif ($type == "" && $dept == "All"  && $status != "All") {
+        } elseif ($type == "" && $dept == "All" && $status != "All") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and Quality = '" . $status . "' and PCI_Status = 'DONE'";
         } elseif ($type == "" && $dept == "All" && $status == "All") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'and PCI_Status = 'DONE'";
@@ -446,7 +504,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $recordQuery = odbc_exec($conn_eip, $getDataRaw) or die(odbc_errormsg());
         while ($result = odbc_fetch_array($recordQuery)) {
             $dataArr[] = $result;
-        };
+        }
+        ;
         header('x-total-count: ' . $total);
         echo json_encode($dataArr);
     }
@@ -525,7 +584,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $recordQuery = odbc_exec($conn_eip, $getDataRaw) or die(odbc_errormsg());
         while ($result = odbc_fetch_array($recordQuery)) {
             $dataArr[] = $result;
-        };
+        }
+        ;
         header('x-total-count: ' . $total);
         echo json_encode($dataArr);
     }
@@ -560,7 +620,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $recordQuery = odbc_exec($conn_eip, $getDataRawSmartTool) or die(odbc_errormsg());
         while ($result = odbc_fetch_array($recordQuery)) {
             $dataArr[] = $result;
-        };
+        }
+        ;
         header('x-total-count: ' . $total);
         echo json_encode($dataArr);
     }
@@ -575,13 +636,14 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $recordQuery = odbc_exec($conn_eip, $getDataRaw) or die(odbc_errormsg());
         while ($result = odbc_fetch_array($recordQuery)) {
             $dataArr[] = $result;
-        };
+        }
+        ;
         echo json_encode($dataArr);
     }
 
     if ($_GET['api'] == 'getEventOfYear') {
         $year = $_GET['year'];
-        $result = (object)[
+        $result = (object) [
             'JANUARY' => getEventOfYear($conn_eip, $year, "1"),
             'FEBRUARY' => getEventOfYear($conn_eip, $year, "2"),
             'MARCH' => getEventOfYear($conn_eip, $year, "3"),
@@ -646,7 +708,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     // }
     if ($_GET['api'] == 'getReport') {
         $id = $_GET['id'];
-        $query_report =  "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where id='" . $id . "'";
+        $query_report = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where id='" . $id . "'";
         $result_report = odbc_exec($conn_eip, $query_report);
         if (odbc_num_rows($result_report) > 0) {
             $obj = odbc_fetch_object($result_report); // Lấy một đối tượng từ kết quả truy vấn
@@ -668,11 +730,11 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $lv = "";
         $dep = "";
         //check level
-        $sql  = "SELECT Level,DepName FROM PPH_Kaizen_Adjustment_User WHERE UserID = '" . $userid . "'";
+        $sql = "SELECT Level,DepName FROM PPH_Kaizen_Adjustment_User WHERE UserID = '" . $userid . "'";
         $rs = odbc_exec($conn_eip, $sql);
         $lv = odbc_result($rs, 1);
         $dep = odbc_result($rs, 'DepName');
-        $result = (object)[
+        $result = (object) [
             'UserID' => $userid,
             'Level' => $lv,
             'DepName' => $dep
@@ -911,7 +973,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $query = "select DDZL.article, xieming model from LIY_ERP.LIY_ERP.DBO.DDZL --xieming : tên giày
             left join LIY_ERP.LIY_ERP.DBO.XXZl on DDZL.XieXing=XXZl.XieXing and DDZL.SheHao=XXZl.SheHao  
             where DDZL.ARTICLE='$art'
-            group by DDZL.ARTICLE,xieming";;
+            group by DDZL.ARTICLE,xieming";
+        ;
 
         $result = odbc_exec($conn_eip, $query);
         $data = array();
@@ -980,7 +1043,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
                     WHERE YEAR(KDate) = $year AND MONTH(KDate) = $month
                     AND T.year = $year AND T.month = $month
                     GROUP BY K.deptname, T.target";
-                        
+
         $result = odbc_exec($conn_eip, $query);
         $data = array();
         while ($row = odbc_fetch_array($result)) {
@@ -990,13 +1053,13 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         http_response_code(200);
         echo json_encode($data);
         exit();
-        
+
     }
 
     if ($_GET['api'] === 'getMonthDoneEmail') {
-  
+
         $year = $_GET['year'];
-    
+
         try {
             $sql = "
                 SELECT 
@@ -1030,7 +1093,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     }
     //get dept set up
 
-    if( $_GET['api'] === 'getDeptSetup') {
+    if ($_GET['api'] === 'getDeptSetup') {
         $query = "
             SELECT  S.kaizen_dept as id,
             D.deptname as name
@@ -1047,17 +1110,41 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         echo json_encode($data);
     }
 
-    if($_GET['api'] === 'getAllEmailSetup') {
-        $query = "
-            SELECT 
-                id,
-                userID,
-                kaizen_dept as departmentId,
-                email, 
-                trial_stage,
-                auto_report
-            FROM PPH_Kaizen_Email_Setup ";
-        $result = odbc_exec($conn_eip, $query);
+    if ($_GET['api'] === 'getAllEmailSetup') {
+        // $query = "
+        //     SELECT 
+        //         id,
+        //         userID,
+        //         kaizen_dept as departmentId,
+        //         email, 
+        //         trial_stage,
+        //         auto_report
+        //     FROM PPH_Kaizen_Email_Setup ";
+        // $result = odbc_exec($conn_eip, $query);
+        // $data = array();
+        // while ($row = odbc_fetch_array($result)) {
+        //     $data[] = $row;
+        // }
+        $data = [
+            ["id" => "10001", "userID" => "50001", "departmentId" => "A1", "email" => "a1_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
+            ["id" => "10006", "userID" => "50006", "departmentId" => "A1", "email" => "a1_2leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
+            ["id" => "10007", "userID" => "50007", "departmentId" => "A1", "email" => "a1_3leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
+            ["id" => "10002", "userID" => "50002", "departmentId" => "A2", "email" => "a2_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
+            ["id" => "10003", "userID" => "50003", "departmentId" => "A4", "email" => "a4_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
+            ["id" => "10004", "userID" => "50004", "departmentId" => "B2", "email" => "b2_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
+            ["id" => "10005", "userID" => "50005", "departmentId" => "BL", "email" => "bl_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
+        ];
+        http_response_code(200);
+        echo json_encode($data);
+    }
+    if ($_GET['api'] === 'getDeptNCFM') {
+
+        $id_report = $_GET['id_report'];
+
+        $qr = "SELECT * FROM PPH_Kaizen_Adjustment_Department_CFM
+                WHERE ID_Report = '$id_report'";
+
+        $result = odbc_exec($conn_eip, $qr);
         $data = array();
         while ($row = odbc_fetch_array($result)) {
             $data[] = $row;
@@ -1065,38 +1152,61 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         http_response_code(200);
         echo json_encode($data);
     }
+    if ($_GET['api'] == 'statusCFM') {
+        
+        $id =  $_GET['id']; // ép int cho an toàn, nếu ID_Report là số
 
+        // Đếm tổng số dòng và số dòng có Status IS NULL
+        $qr = "SELECT 
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN Status IS NULL THEN 1 ELSE 0 END) AS null_count
+                FROM PPH_Kaizen_Adjustment_Department_CFM
+                WHERE ID_Report = '$id'";
+
+        $result = odbc_exec($conn_eip, $qr);
+
+        if ($row = odbc_fetch_array($result)) {
+            // Nếu không có dòng nào hoặc có dòng bị NULL -> false
+            if ($row['total'] == 0 || $row['null_count'] > 0) {
+                echo json_encode(false);
+            } else {
+                echo json_encode(true);
+            }
+        } else {
+            echo json_encode(false); // query lỗi thì cũng trả về false
+        }
+    }
 }
 
 
 // Handle POST request from ReactJS
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($_GET['api'] == 'AddEducation') {
-        $Title  = $_POST['Title'];
+        $Title = $_POST['Title'];
         $UserID = $_POST['UserID'];
 
         $FileDocument = $_FILES["DocumentName"]["name"];
         //Thư mục bạn sẽ lưu file upload
-        $target_dir_file    = "Uploads/Files/";
+        $target_dir_file = "Uploads/Files/";
         //Vị trí file lưu tạm trong server (file sẽ lưu trong uploads, với tên giống tên ban đầu)
-        $target_file   = $target_dir_file . basename($_FILES["DocumentName"]["name"]);
+        $target_file = $target_dir_file . basename($_FILES["DocumentName"]["name"]);
 
         move_uploaded_file($_FILES["DocumentName"]["tmp_name"], $target_file);
 
 
         $FilePhoto = $_FILES["CoverPhoto"]["name"];
         //Thư mục bạn sẽ lưu Image upload
-        $target_dir_img    = "Uploads/Images/";
+        $target_dir_img = "Uploads/Images/";
 
         //Những loại file được phép upload
-        $allowtypes    = array('jpg', 'png', 'jpeg', 'gif');
+        $allowtypes = array('jpg', 'png', 'jpeg', 'gif');
 
         //Đổi tên file
         $tempBe = explode(".", $FilePhoto);
         $extBe = end($tempBe); // lấy phần mở rộng
         $newfilenameBe = 'Cover-' . round(microtime(true)) . '.' . $extBe;
         //Vị trí file lưu tạm trong server (file sẽ lưu trong uploads)
-        $target_fileBe   =  $target_dir_img . basename($newfilenameBe);
+        $target_fileBe = $target_dir_img . basename($newfilenameBe);
         //Lấy phần mở rộng của file 
         $FileTypeBe = pathinfo($target_fileBe, PATHINFO_EXTENSION);
 
@@ -1110,7 +1220,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         //upload file
         move_uploaded_file($_FILES["CoverPhoto"]["tmp_name"], $target_fileBe);
 
-        $sql  = "INSERT INTO PPH_Kaizen_Adjustment_Education(UserID,UserDate,DocumentName,Title,CoverPhoto) VALUES ('" . $UserID . "',GETDATE(),'" . $FileDocument . "',N'" . $Title . "','" . $newfilenameBe . "')";
+        $sql = "INSERT INTO PPH_Kaizen_Adjustment_Education(UserID,UserDate,DocumentName,Title,CoverPhoto) VALUES ('" . $UserID . "',GETDATE(),'" . $FileDocument . "',N'" . $Title . "','" . $newfilenameBe . "')";
 
         $rs = odbc_exec($conn_eip, $sql);
         if ($rs > 0) {
@@ -1127,13 +1237,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Xử lý dữ liệu và trả về kết quả
         $KDate = $_POST["KDate"];
-        $GSBH  = $_POST["GSBH"];
-        $Dept  = $_POST["Dept"];
-        $Position  = $_POST["Position"];
+        $GSBH = $_POST["GSBH"];
+        $Dept = $_POST["Dept"];
+        $Position = $_POST["Position"];
         $Person_ID = $_POST["Person_ID"];
         $Lean = $_POST["Lean"];
         $Article = $_POST["Article"];
-        $Model  = $_POST["Model"];
+        $Model = $_POST["Model"];
         $Problem_Improve = $_POST["Problem_Improve"];
         $Title_Improve = $_POST["Title_Improve"];
         $Before_Improve = $_POST["Before_Improve"];
@@ -1152,8 +1262,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         //Tạo Model Name
         if ($Article != '' && $Model == '') {
             $check_model = "select XieMing from LIY_ERP.LIY_ERP.DBO.kfxxzl where article ='$Article'";
-            $rs_model    = odbc_exec($conn_eip, $check_model);
-            $Model   = odbc_result($rs_model, 1);
+            $rs_model = odbc_exec($conn_eip, $check_model);
+            $Model = odbc_result($rs_model, 1);
         }
         //check ID
         $qry_id = "select count(1) from PPH_Kaizen_Adjustment_Report where KDate = '$KDate'"; //echo $qry_id;
@@ -1164,13 +1274,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             //$id = $id + 1;
         } else {
             $qry_maxid = "select max(right(ID,3))+1 from PPH_Kaizen_Adjustment_Report where KDate = '$KDate'"; //echo $qry_maxid;
-            $rs_id     = odbc_exec($conn_eip, $qry_maxid);
-            $id        = odbc_result($rs_id, 1);
+            $rs_id = odbc_exec($conn_eip, $qry_maxid);
+            $id = odbc_result($rs_id, 1);
 
             while (strlen($id) < 3) {
                 $id = '0' . $id;
             }
-            $id   = date('Ymd', strtotime(date($KDate))) . $id;
+            $id = date('Ymd', strtotime(date($KDate))) . $id;
         }
 
         // $InsertSQL = "INSERT INTO PPH_Kaizen_Adjustment_Report(ID,KDate,GSBH,Dept,Position,Person_ID,Lean,Model,Article,Problem_Improve,Title_Improve,Before_Improve,After_Improve,Rf_Number,UserDate,Phone,Email)VALUES ('" . $id . "','" . $KDate . "','" . $GSBH . "','" . $Dept . "','" . $Position . "','" . $Person_ID . "',N'" . $Lean . "',N'" . $Model . "','" . $Article . "','" . $Problem_Improve . "','" . $Title_Improve . "',N'" . $Before_Improve . "',N'" . $After_Improve . "'," . $Rf_Number . ",GETDATE(),'" . $Phone . "','" . $Email . "')";
@@ -1183,8 +1293,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (odbc_num_rows($rs) > 0) {
             // Tạo thư mục nếu chưa có
             $target_dir_img = "Uploads/Images/";
-            if (!is_dir($target_dir_img)) mkdir($target_dir_img, 0777, true);
-            $allowtypes  = array('jpg', 'png', 'jpeg', 'gif');
+            if (!is_dir($target_dir_img))
+                mkdir($target_dir_img, 0777, true);
+            $allowtypes = array('jpg', 'png', 'jpeg', 'gif');
 
             // Biến lưu tên file (nếu có)
             $newfilenameBefore = '';
@@ -1356,11 +1467,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $ErrorBefore = $_POST['ErrorBefore'];
         $ErrorAfter = $_POST['ErrorAfter'];
         $QuantityTarget = $_POST['QuantityTarget'];
-        $TimeCompleteBefore  = $_POST['TimeCompleteBefore'];
-        $TimeCompleteAfter  = $_POST['TimeCompleteAfter'];
+        $TimeCompleteBefore = $_POST['TimeCompleteBefore'];
+        $TimeCompleteAfter = $_POST['TimeCompleteAfter'];
         $WorkingTime = $_POST['WorkingTime'];
-        $NumPeopleBefore      = $_POST['NumPeopleBefore'];
-        $NumPeopleAfter    = $_POST['NumPeopleAfter'];
+        $NumPeopleBefore = $_POST['NumPeopleBefore'];
+        $NumPeopleAfter = $_POST['NumPeopleAfter'];
         $CostBefore = $_POST['CostBefore'];
         $CostAfter = $_POST['CostAfter'];
         $Safe = $_POST['Safe'];
@@ -1377,8 +1488,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Tạo thư mục nếu chưa có
         $target_dir_img = "Uploads/Images/";
-        if (!is_dir($target_dir_img)) mkdir($target_dir_img, 0777, true);
-        $allowtypes  = array('jpg', 'png', 'jpeg', 'gif');
+        if (!is_dir($target_dir_img))
+            mkdir($target_dir_img, 0777, true);
+        $allowtypes = array('jpg', 'png', 'jpeg', 'gif');
 
         // Biến lưu tên file (nếu có)
         $newfilenameBefore = '';
@@ -1429,7 +1541,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
 
-        $sql  = "INSERT  into PPH_Kaizen_Adjustment_Improvement(ID,UserID,UserDate,NoOfUnit,Effectivity,MChange,ImgBefore,ImgAfter,CtBefore,CtAfter,TtBefore,TtAfter,WorkingTimeBefore_hrs,WorkingTimeAfter_hrs,CheckSumBefore,CheckSumAfter,ErrorBefore,ErrorAfter,QuantityTarget,TimeCompleteBefore,TimeCompleteAfter,WorkingTime,NumPeopleBefore,NumPeopleAfter,CostBefore,CostAfter,Safe,CostSaving,Adjustment,Refine,Clean,Standardization,Nurture,ContentBefore,ContentAfter,UserCF,Mark)VALUES('" . $ID . "','" . $UserID . "',GETDATE(),'" . $NoOfUnit . "','" . $Effectivity . "','" . $MChange . "','" . $newfilenameBefore . "','" . $newfilenameAf . "','" . $CtBefore . "','" . $CtAfter . "','" . $TtBefore . "','" . $TtAfter . "','" . $WorkingTimeBefore_hrs . "','" . $WorkingTimeAfter_hrs . "','" . $CheckSumBefore . "','" . $CheckSumAfter . "','" . $ErrorBefore . "','" . $ErrorAfter . "','" . $QuantityTarget . "','" . $TimeCompleteBefore . "','" . $TimeCompleteAfter . "','" . $WorkingTime . "','" . $NumPeopleBefore . "','" . $NumPeopleAfter . "','" . $CostBefore . "','" . $CostAfter . "','" . $Safe . "','" . $CostSaving . "','" . $Adjustment . "','" . $Refine . "','" . $Clean . "','" . $Standardization . "','" . $Nurture . "','" . $ContentBefore . "','" . $ContentAfter . "','" . $UserCF . "','" . $Mark . "')";
+        $sql = "INSERT  into PPH_Kaizen_Adjustment_Improvement(ID,UserID,UserDate,NoOfUnit,Effectivity,MChange,ImgBefore,ImgAfter,CtBefore,CtAfter,TtBefore,TtAfter,WorkingTimeBefore_hrs,WorkingTimeAfter_hrs,CheckSumBefore,CheckSumAfter,ErrorBefore,ErrorAfter,QuantityTarget,TimeCompleteBefore,TimeCompleteAfter,WorkingTime,NumPeopleBefore,NumPeopleAfter,CostBefore,CostAfter,Safe,CostSaving,Adjustment,Refine,Clean,Standardization,Nurture,ContentBefore,ContentAfter,UserCF,Mark)VALUES('" . $ID . "','" . $UserID . "',GETDATE(),'" . $NoOfUnit . "','" . $Effectivity . "','" . $MChange . "','" . $newfilenameBefore . "','" . $newfilenameAf . "','" . $CtBefore . "','" . $CtAfter . "','" . $TtBefore . "','" . $TtAfter . "','" . $WorkingTimeBefore_hrs . "','" . $WorkingTimeAfter_hrs . "','" . $CheckSumBefore . "','" . $CheckSumAfter . "','" . $ErrorBefore . "','" . $ErrorAfter . "','" . $QuantityTarget . "','" . $TimeCompleteBefore . "','" . $TimeCompleteAfter . "','" . $WorkingTime . "','" . $NumPeopleBefore . "','" . $NumPeopleAfter . "','" . $CostBefore . "','" . $CostAfter . "','" . $Safe . "','" . $CostSaving . "','" . $Adjustment . "','" . $Refine . "','" . $Clean . "','" . $Standardization . "','" . $Nurture . "','" . $ContentBefore . "','" . $ContentAfter . "','" . $UserCF . "','" . $Mark . "')";
         // echo json_encode(array('Info' => $sql1));
         $rs = odbc_exec($conn_eip, $sql);
         if ($rs > 0) {
@@ -1456,11 +1568,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $ErrorBefore = $_POST['ErrorBefore'];
         $ErrorAfter = $_POST['ErrorAfter'];
         $QuantityTarget = $_POST['QuantityTarget'];
-        $TimeCompleteBefore  = $_POST['TimeCompleteBefore'];
-        $TimeCompleteAfter  = $_POST['TimeCompleteAfter'];
+        $TimeCompleteBefore = $_POST['TimeCompleteBefore'];
+        $TimeCompleteAfter = $_POST['TimeCompleteAfter'];
         $WorkingTime = $_POST['WorkingTime'];
-        $NumPeopleBefore      = $_POST['NumPeopleBefore'];
-        $NumPeopleAfter    = $_POST['NumPeopleAfter'];
+        $NumPeopleBefore = $_POST['NumPeopleBefore'];
+        $NumPeopleAfter = $_POST['NumPeopleAfter'];
         $CostBefore = $_POST['CostBefore'];
         $CostAfter = $_POST['CostAfter'];
         $Safe = $_POST['Safe'];
@@ -1489,23 +1601,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $target_dir_img = "Uploads/Images/";
 
         //Những loại file được phép upload
-        $allowtypes  = array('jpg', 'png', 'jpeg', 'gif');
+        $allowtypes = array('jpg', 'png', 'jpeg', 'gif');
 
 
-        if (isset($_FILES["ImgBefore"]) &&  $_FILES["ImgBefore"]["name"] != null) {
+        if (isset($_FILES["ImgBefore"]) && $_FILES["ImgBefore"]["name"] != null) {
             //xóa ảnh củ
             if ($newfilenameBefore != '') {
                 $link = $target_dir_img . $newfilenameBefore;
-                $target_file   = $target_dir_img . basename($newfilenameBefore);
+                $target_file = $target_dir_img . basename($newfilenameBefore);
                 if (file_exists($target_file)) {
                     unlink($link);
                 }
-            };
+            }
+            ;
             //Đổi tên file
             $tempBefore = explode(".", $FilePhotoBefore);
             $newfilenameBefore = 'B' . round(microtime(true)) . '.' . end($tempBefore);
             //Vị trí file lưu tạm trong server (file sẽ lưu trong uploads)
-            $target_fileBefore   =  $target_dir_img . basename($newfilenameBefore);
+            $target_fileBefore = $target_dir_img . basename($newfilenameBefore);
             //Lấy phần mở rộng của file 
             $FileTypeBefore = pathinfo($target_fileBefore, PATHINFO_EXTENSION);
             // Kiểm tra kiểu file
@@ -1517,20 +1630,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             move_uploaded_file($_FILES["ImgBefore"]["tmp_name"], $target_fileBefore);
         }
 
-        if (isset($_FILES["ImgAfter"]) &&  $_FILES["ImgAfter"]["name"] != null) {
+        if (isset($_FILES["ImgAfter"]) && $_FILES["ImgAfter"]["name"] != null) {
             //xóa ảnh củ
             if ($newfilenameAf != '') {
                 $link = $target_dir_img . $newfilenameAf;
-                $target_file   = $target_dir_img . basename($newfilenameAf);
+                $target_file = $target_dir_img . basename($newfilenameAf);
                 if (file_exists($target_file)) {
                     unlink($link);
                 }
-            };
+            }
+            ;
             //Đổi tên file
             $tempAf = explode(".", $FilePhotoAf);
             $newfilenameAf = 'B' . round(microtime(true)) . '.' . end($tempAf);
             // Vị trí file lưu tạm trong server (file sẽ lưu trong uploads)
-            $target_fileAf   =  $target_dir_img . basename($newfilenameAf);
+            $target_fileAf = $target_dir_img . basename($newfilenameAf);
             //Lấy phần mở rộng của file 
             $FileTypeAf = pathinfo($target_fileAf, PATHINFO_EXTENSION);
 
@@ -1602,8 +1716,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $tempAf = explode(".", $FileVideoAf);
         $newfilenameAf .= 'VideoAf-' . round(microtime(true)) . '.' . end($tempAf);
         //Vị trí file lưu tạm trong server (file sẽ lưu trong uploads)
-        $target_fileBefore   =  $target_dir_video . basename($newfilenameBefore);
-        $target_fileAf   =  $target_dir_video . basename($newfilenameAf);
+        $target_fileBefore = $target_dir_video . basename($newfilenameBefore);
+        $target_fileAf = $target_dir_video . basename($newfilenameAf);
         // //Lấy phần mở rộng của file 
         $FileTypeBefore = pathinfo($target_fileBefore, PATHINFO_EXTENSION);
         $FileTypeAf = pathinfo($target_fileAf, PATHINFO_EXTENSION);
@@ -1641,17 +1755,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             //$id = $id + 1;
         } else {
             $qry_maxid = "select max(right(ID,2))+1 from PPH_Kaizen_Adjustment_SmartTool where UserDate = '$currentDate'"; //echo $qry_maxid;
-            $rs_id     = odbc_exec($conn_eip, $qry_maxid);
-            $id        = odbc_result($rs_id, 1);
+            $rs_id = odbc_exec($conn_eip, $qry_maxid);
+            $id = odbc_result($rs_id, 1);
 
             while (strlen($id) < 2) {
                 $id = '0' . $id;
             }
-            $id   = date('Ymd', strtotime(date($currentDate))) . $id;
+            $id = date('Ymd', strtotime(date($currentDate))) . $id;
         }
 
 
-        $sql  = "INSERT INTO PPH_Kaizen_Adjustment_SmartTool(ID,VideoBe,VideoAf, UserPosted, UserDate, Title,Model,Status,ctBefore,ctAfter,rftBefore,rftAfter,processBefore,processAfter,process,expected) VALUES ('" . $id . "','" . $newfilenameBefore . "','" . $newfilenameAf . "','" . $UserPosted . "', getDate(),'" . $Title . "','" . $Model . "','" . $Status . "','" . $ctBefore . "','" . $ctAfter . "','" . $rftBefore . "','" . $rftAfter . "','" . $processBefore . "','" . $processAfter . "','" . $process . "','" . $expected . "')";
+        $sql = "INSERT INTO PPH_Kaizen_Adjustment_SmartTool(ID,VideoBe,VideoAf, UserPosted, UserDate, Title,Model,Status,ctBefore,ctAfter,rftBefore,rftAfter,processBefore,processAfter,process,expected) VALUES ('" . $id . "','" . $newfilenameBefore . "','" . $newfilenameAf . "','" . $UserPosted . "', getDate(),'" . $Title . "','" . $Model . "','" . $Status . "','" . $ctBefore . "','" . $ctAfter . "','" . $rftBefore . "','" . $rftAfter . "','" . $processBefore . "','" . $processAfter . "','" . $process . "','" . $expected . "')";
         // echo json_encode(array('Info' => $sql));
         $rs = odbc_exec($conn_eip, $sql);
         if ($rs > 0) {
@@ -1667,8 +1781,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     if ($_GET['api'] === 'sendEmailReport') {
         $json = file_get_contents("php://input");
-        $month = isset($_GET['month']) ? (int)$_GET['month'] : null;
-        $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+        $month = isset($_GET['month']) ? (int) $_GET['month'] : null;
+        $year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
 
         // Chuyển JSON thành mảng
         $data = json_decode($json, true);
@@ -1676,16 +1790,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $actual = 0;
         $target = 0;
-        
+
         foreach ($data as $key => $value) {
-            $actual += $value['totalCases'];
-            $target += $value['target'];
+            if ($value['Department'] === 'TOTAL') {
+                $actual = $value['Submitted'];
+                $target = $value['Target'];
+            }
         }
 
         $diff = $target > 0 ? round((($actual / $target) - 1) * 100, 2) : 0;
 
         // Tạo file Excel
-        $xlc = generateExcelReport($data);
+        $xlc = generateExcelReport($data, $month, $year);
 
         // lấy dử liệu email từ data
         // $toEmail = getEmail($conn_eip, "trial_stage", "TO");
@@ -1695,6 +1811,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // echo json_encode($ccEmail);
 
         // Thông tin email
+        //$to = ['toan.45354@lacty2.com.vn'];
         $to = ['thien879811@gmail.com'];
         $cc = null;
 
@@ -1737,12 +1854,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </p>";
 
         // Gửi email
-        $sendEmail = create_email($to, $cc, $subject, $body, $xlc);
+        // $sendEmail = create_email($to, $cc, $subject, $body, $xlc);
 
-        // Xóa file Excel sau khi gửi
-        if (file_exists($xlc)) {
-            unlink($xlc);
-        }
+        // // Xóa file Excel sau khi gửi
+        // if (file_exists($xlc)) {
+        //     unlink($xlc);
+        // }
 
         // Nếu có month thì update DB
         if (!empty($month)) {
@@ -1760,135 +1877,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($sendEmail);
     }
+
     if ($_GET['api'] === 'sendEmail') {
         $json = file_get_contents("php://input");
         $data = json_decode($json, true);
-        $departmentsID = $data['departmentsID'];
         $to = $data['to'];
+        $id = $data['id_report'];
         $cc = $data['cc'];
-        $id_report = $data['id_report'];
-        // Kiểm tra xem departmentsID có phải là mảng hay không , chuyển thành chuỗi
-        if (is_array($departmentsID)) {
-            $departmentsID = "'" . implode("','", $departmentsID) . "'";
-        }
 
-        // Lấy thông tin improvement từ data
+        $toEmail = [];
+        $ccEmail = [];
 
-        $imQuery = "SELECT *  FROM PPH_Kaizen_Adjustment_Report WHERE ID = '" . $id_report . "'";
-        $imResult = odbc_exec($conn_eip, $imQuery);
-        if (!$imResult) {
-            // Lấy thông tin lỗi
-            $error = odbc_errormsg($conn_eip);
-            die("SQL Error: " . $error . " | Query: " . $imQuery);
-        }
-
-        $dtImprovemrnt = odbc_fetch_array($imResult);
-
-        if (!$dtImprovemrnt) {
-            echo json_encode(['Msg' => 'Không tìm thấy thông tin cải tiến.']);
-            return;
-        }
-        $nImprove = $dtImprovemrnt['Title_Improve'];
-        $KDate = $dtImprovemrnt['KDate'];
-
-        $subject = "Thông tin cải tiến: Tham gia buổi thử nghiệm ý tưởng đề xuất cải tiến";
-        $body ="
-            <p>Dear all,</p>
-            <p>Vui lòng xem thông tin bên dưới là thông tin thử nghiệm của đề xuất cải tiến. 
-            Mời các đơn vị liên quan bên dưới tham gia trực tiếp thử nghiệm.</p>
-
-            <p><b>Vấn đề cải tiến:</b> <span style='color:orange;'>$nImprove</span><br>
-            <b>Đơn vị tham gia:</b> <span style='color:orange;'>$departmentsID</span><br>
-            <b>Thời gian:</b> <span style='color:orange;'>$KDate</span><br>
-            <b>Địa điểm:</b> ..............................................</p>
-
-            <p>Kính mong các đơn vị liên quan tham gia đúng thời gian buổi thử nghiệm.<br>
-            Nếu anh/chị có thắc mắc vui lòng liên hệ FME.</p>
-
-            <p>Số điện thoại nội bộ: <span style='color:orange;'>[số điện thoại theo từng nhà máy]</span></p>
-
-            <p>
-                <a href='http://192.168.30.19/KaizenCloud/4/KaizenCloud/rawData/Med?id=$id_report'>
-                    Đường dẫn Kaizen
-                </a>
-            </p>
-
-            <p>
-                <img src='https://via.placeholder.com/600x250.png?text=Hinh+anh+minh+hoa'
-                    alt='Hình ảnh minh họa' width='600'>
-            </p>
-
-            <p>Xin cảm ơn,<br>FME</p>
-            <p><i>Thank and best regards!</i></p>
-
-            <hr>
-            <p>
-                <b>Triệu Phước Toàn</b><br>
-                Phone: +84358269547<br>
-                Dept: GME-Lac Ty 2 Co, Ltd.<br>
-                Lot B1, B2 Tan Thu Thanh Industrial Zone, Chau Thanh A District, Hau Giang Province
-            </p>
-            ";
-
-
-
-        $qry = "SELECT Dept 
+        foreach ($to as $key => $value) {
+            $qry = "SELECT Email 
             FROM PPH_Kaizen_Adjustment_Department_CFM 
-            WHERE Dept IN ($departmentsID)
-        ";
+            WHERE Email = '" . $value['email'] . "'
+            AND Dept = '" . $value['department'] . "'
+            AND ID_Report = '" . $id . "'
+            ";
+            $rs = odbc_exec($conn_eip, $qry);
 
-        $rs = odbc_exec($conn_eip, $qry);
-
-        if (!$rs) {
-            // Lấy thông tin lỗi
-            $error = odbc_errormsg($conn_eip);
-            die("SQL Error: " . $error . " | Query: " . $qry);
-        }
-
-        $departments = [];
-        while ($row = odbc_fetch_array($rs)) {
-            $departments[] = $row['Dept'];
-        }
-
-
-        // đơn vị được chọn gửi email không có trong db thì gửi email
-        // Lấy danh sách đơn vị từ request
-        $requestedDepartments = is_array($data['departmentsID']) ? $data['departmentsID'] : [];
-        // Lấy danh sách đơn vị đã có trong DB
-        $existingDepartments = $departments;
-
-        // Tìm các đơn vị chưa có trong DB (chỉ gửi email cho các đơn vị này)
-        $departmentsToSend = array_diff($requestedDepartments, $existingDepartments);
-
-        // Nếu không có đơn vị nào cần gửi thì trả về thông báo
-        if (empty($departmentsToSend)) {
-            $sendEmail = ['Msg' => 'Không có đơn vị nào cần gửi email.'];
-        } else {
-            if (empty($to)) {
-            $sendEmail = ['Msg' => 'Không tìm thấy email của các đơn vị cần gửi.'];
+            if (odbc_num_rows($rs) <= 0) {
+                $sql = "INSERT INTO PPH_Kaizen_Adjustment_Department_CFM (Email, UserID , Dept, ID_Report) 
+                VALUES ('" . $value['email'] . "', '" . $value['userId'] . "','" . $value['department'] . "', '" . $id . "')";
+                odbc_exec($conn_eip, $sql);
+                $toEmail[] = $value['email'];
             } else {
-
-            // Thêm từng đơn vị vào bảng PPH_Kaizen_Adjustment_Department_CFM
-            // foreach ($departmentsToSend as $dept) {
-            //     $qr = "INSERT INTO PPH_Kaizen_Adjustment_Department_CFM (ID_Report, Dept, Status)
-            //     VALUES ('" . $data['id'] . "', '" . $dept . "', '1')";
-            //     odbc_exec($conn_eip, $qr);
-            // }
-            // $cc = $data['cc']; // Nếu có CC thì lấy ở đây
-            $cc = null;
-            $sendEmail = create_email($to, $cc, $subject, $body);
+                $toEmail[] = $value['email'];
             }
         }
-        // Chỉ trả về 1 JSON hợp lệ
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($sendEmail);
+        echo json_encode(['Msg' => 'Successfully.']);
     }
 
-    if($_GET['api'] == 'diffDepartmentCFM') {
-        $json = file_get_contents("php://input");
-        $data = json_decode($json, true);
-        echo json_encode($data);
-    }
 }
 
 // Handle DELETE request from ReactJS
@@ -1904,7 +1924,7 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
         $target_dir_img = "Uploads/Images/";
         if ($FileNameImgBe != '') {
             $link1 = $target_dir_img . $FileNameImgBe;
-            $target_file1   =  $target_dir_img . basename($FileNameImgBe);
+            $target_file1 = $target_dir_img . basename($FileNameImgBe);
             //xoa file
             if (file_exists($target_file1)) {
                 unlink($link1);
@@ -1913,7 +1933,7 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
 
         if ($FileNameImgAf != '') {
             $link2 = $target_dir_img . $FileNameImgAf;
-            $target_file2   = $target_dir_img . basename($FileNameImgAf);
+            $target_file2 = $target_dir_img . basename($FileNameImgAf);
             if (file_exists($target_file2)) {
                 unlink($link2);
             }
@@ -1932,7 +1952,7 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
         }
         $rf_num = odbc_result($rs_, 'Rf_Number');
         $dept_code = odbc_result($rs_, 'Dept');
-        $kdate =  odbc_result($rs_, 'KDate');
+        $kdate = odbc_result($rs_, 'KDate');
         $y = date("Y", strtotime($kdate));
         $m = date("m", strtotime($kdate));
 
@@ -1973,20 +1993,20 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
         $CoverPhoto = odbc_result($rs, 'CoverPhoto');
         //duong dan
         $target_dir_img = "Uploads/Images/";
-        $target_dir_file    = "Uploads/Files/";
+        $target_dir_file = "Uploads/Files/";
 
 
         if ($DocumentName != '') {
-            $link1 =  $target_dir_file . $DocumentName;
-            $target_file1   =   $target_dir_file . basename($DocumentName);
+            $link1 = $target_dir_file . $DocumentName;
+            $target_file1 = $target_dir_file . basename($DocumentName);
             //xoa file
             if (file_exists($target_file1)) {
                 unlink($link1);
             }
         }
-        if ($CoverPhoto  != '') {
+        if ($CoverPhoto != '') {
             $link2 = $target_dir_img . $CoverPhoto;
-            $target_file2   = $target_dir_img  . basename($CoverPhoto);
+            $target_file2 = $target_dir_img . basename($CoverPhoto);
             if (file_exists($target_file2)) {
                 unlink($link2);
             }
@@ -2016,7 +2036,7 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
         $target_dir_video = "Uploads/Videos/";
         if ($FileVideoBe != '') {
             $link1 = $target_dir_video . $FileVideoBe;
-            $target_file1   =  $target_dir_video . basename($FileVideoBe);
+            $target_file1 = $target_dir_video . basename($FileVideoBe);
             //xoa file
             if (file_exists($target_file1)) {
                 unlink($link1);
@@ -2025,7 +2045,7 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
 
         if ($FileVideoAf != '') {
             $link2 = $target_dir_video . $FileVideoAf;
-            $target_file2   = $target_dir_video . basename($FileVideoAf);
+            $target_file2 = $target_dir_video . basename($FileVideoAf);
             if (file_exists($target_file2)) {
                 unlink($link2);
             }
@@ -2047,6 +2067,7 @@ if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
 
 
 if ($_SERVER["REQUEST_METHOD"] === "PUT") {
+
     if ($_GET['api'] == 'cfmStatus') {
         // Lấy dữ liệu từ yêu cầu POST
         $json = file_get_contents("php://input");
@@ -2065,6 +2086,7 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
             echo json_encode(array('Msg' => 'Fail.'));
         }
     }
+
     if ($_GET['api'] == 'cfmQuality') {
         // Lấy dữ liệu từ yêu cầu POST
         $json = file_get_contents("php://input");
@@ -2098,6 +2120,93 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
             echo json_encode(array('Msg' => 'Successfully.'));
         } else {
             echo json_encode(array('Msg' => 'Fail.'));
+        }
+    }
+
+    if ($_GET['api'] == 'updateStatusME') {
+        // Lấy dữ liệu từ yêu cầu PUT
+        // {ID: '20250811004', 
+//     Status: 'DONE', 
+//     Status_CFMID: '123', 
+//     Status_CFMDATE: '2025-08-21 08:23:06', 
+//     Remark: '', 
+// userRole:''}
+        $json = file_get_contents("php://input");
+        $data = json_decode($json, true);
+        $Status = $data['Status'];
+        $Status_CFMID = $data['Status_CFMID'];
+        $Status_CFMDATE = $data['Status_CFMDATE'];
+        $Remark = $data['Remark'];
+        $ID = $data['ID'];
+        $userRole = $data['userRole'];
+
+        if ($userRole == 2) {
+            $sql = "UPDATE  PPH_Kaizen_Adjustment_Report
+            SET ME_Status = '" . $Status . "',
+            ME_Status_CFMID = '" . $Status_CFMID . "',
+            ME_Status_CFMDATE = '" . $Status_CFMDATE . "',
+            Remark =  '" . $Remark . "'
+            WHERE ID = '" . $ID . "' ";
+        }
+
+
+
+
+        if ($userRole == 1) {
+            $sql = "UPDATE  PPH_Kaizen_Adjustment_Report
+            SET PCI_Status  = '" . $Status . "',
+            PCI_Status_CFMID = '" . $Status_CFMID . "',
+            PCI_Status_CFMDATE = '" . $Status_CFMDATE . "'
+            WHERE ID = '" . $ID . "' ";
+        }
+
+
+
+        $rs = odbc_exec($conn_eip, $sql);
+
+        if ($rs > 0) {
+            echo json_encode(array('Msg' => 'Successfully.'));
+        } else {
+            echo json_encode(array('Msg' => 'Fail.' . odbc_errormsg($conn_eip)));
+        }
+
+        // Xử lý dữ liệu và trả về kết quả
+    }
+
+
+    if ($_GET['api'] == 'cfmDepartment') {
+        $json = file_get_contents("php://input");
+        $data = json_decode($json, true);
+        $departmentId = $data['department'];
+        $id_report = $_GET['id_report'];
+        $userId = $data['userId'];
+        $email = $data['email'];
+        $status = $data['status'];
+
+        $date = date('Y-m-d H:i:s');
+
+        $sql = "SELECT * FROM PPH_Kaizen_Adjustment_Department_CFM 
+        WHERE ID_Report = '" . $id_report . "' 
+        AND Dept = '" . $departmentId . "' 
+        AND Email = '" . $email . "'
+        ";
+
+
+        $rs = odbc_exec($conn_eip, $sql);
+
+        if (odbc_num_rows($rs) > 0) {
+            $sql = "UPDATE PPH_Kaizen_Adjustment_Department_CFM 
+            SET Status = '" . $status . "',
+            Date_Confirm= '" . $date . "'
+            WHERE ID_Report = '" . $id_report . "' 
+            AND Dept = '" . $departmentId . "'";
+        }
+        $rs = odbc_exec($conn_eip, $sql);
+
+        if ($rs > 0) {
+            echo json_encode(array('Msg' => "Successfully."));
+        } else {
+            echo json_encode(array('Msg' => 'Fail.' . odbc_errormsg()));
         }
     }
 }
