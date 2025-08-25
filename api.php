@@ -350,9 +350,6 @@ function updateStatus($conn_eip, $id, $col, $status)
         return ['Msg' => 'Cập nhật trạng thái thất bại: ' . odbc_errormsg($conn_eip)];
     }
 }
-
-
-
 //Xử Lý API
 // Handle preflight OPTIONS request
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
@@ -708,7 +705,10 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     // }
     if ($_GET['api'] == 'getReport') {
         $id = $_GET['id'];
-        $query_report = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where id='" . $id . "'";
+        $query_report = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number 
+        FROM PPH_Kaizen_Adjustment_Report PKAR
+        LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where id='" . $id . "'
+        ";
         $result_report = odbc_exec($conn_eip, $query_report);
         if (odbc_num_rows($result_report) > 0) {
             $obj = odbc_fetch_object($result_report); // Lấy một đối tượng từ kết quả truy vấn
@@ -1111,29 +1111,21 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     }
 
     if ($_GET['api'] === 'getAllEmailSetup') {
-        // $query = "
-        //     SELECT 
-        //         id,
-        //         userID,
-        //         kaizen_dept as departmentId,
-        //         email, 
-        //         trial_stage,
-        //         auto_report
-        //     FROM PPH_Kaizen_Email_Setup ";
-        // $result = odbc_exec($conn_eip, $query);
-        // $data = array();
-        // while ($row = odbc_fetch_array($result)) {
-        //     $data[] = $row;
-        // }
-        $data = [
-            ["id" => "10001", "userID" => "50001", "departmentId" => "A1", "email" => "a1_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
-            ["id" => "10006", "userID" => "50006", "departmentId" => "A1", "email" => "a1_2leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
-            ["id" => "10007", "userID" => "50007", "departmentId" => "A1", "email" => "a1_3leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
-            ["id" => "10002", "userID" => "50002", "departmentId" => "A2", "email" => "a2_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
-            ["id" => "10003", "userID" => "50003", "departmentId" => "A4", "email" => "a4_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
-            ["id" => "10004", "userID" => "50004", "departmentId" => "B2", "email" => "b2_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
-            ["id" => "10005", "userID" => "50005", "departmentId" => "BL", "email" => "bl_leader@company.com", "trial_stage" => "TO", "auto_report" => "CC"],
-        ];
+        $query = "
+            SELECT 
+                id,
+                userID,
+                kaizen_dept as departmentId,
+                email, 
+                trial_stage,
+                auto_report
+            FROM PPH_Kaizen_Email_Setup ";
+        $result = odbc_exec($conn_eip, $query);
+        $data = array();
+        while ($row = odbc_fetch_array($result)) {
+            $data[] = $row;
+        }
+
         http_response_code(200);
         echo json_encode($data);
     }
@@ -1153,8 +1145,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         echo json_encode($data);
     }
     if ($_GET['api'] == 'statusCFM') {
-        
-        $id =  $_GET['id']; // ép int cho an toàn, nếu ID_Report là số
+
+        $id = $_GET['id']; // ép int cho an toàn, nếu ID_Report là số
 
         // Đếm tổng số dòng và số dòng có Status IS NULL
         $qr = "SELECT 
@@ -1176,6 +1168,68 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
             echo json_encode(false); // query lỗi thì cũng trả về false
         }
     }
+
+    if ($_GET['api'] == 'getInfoUser') {
+        $userid = $_GET['id'];
+
+        if (!$userid) {
+            echo json_encode(['error' => 'Missing user ID']);
+            exit;
+        }
+
+        $sql = "SELECT Level,DepName,S.email FROM PPH_Kaizen_Adjustment_User U
+                JOIN PPH_Kaizen_Email_Setup S
+                ON U.UserID = S.id
+                WHERE U.UserID = ?";
+        $stmt = odbc_prepare($conn_eip, $sql);
+        $exec = odbc_execute($stmt, [$userid]);
+
+        if ($exec && $row = odbc_fetch_array($stmt)) {
+            $data = [
+                'UserID' => $userid,
+                'Level' => $row['Level'],
+                'DepName' => $row['DepName'],
+                'Email' => $row['email']
+            ];
+        } else {
+            // fallback hardcode
+            switch ($userid) {
+                case '45354':
+                    $data = ['UserID' => $userid, 'Level' => '2', 'DepName' => 'Default Dep', 'Email' => 'me@me.com'];
+                    break;
+                case '59282':
+                    $data = ['UserID' => $userid, 'Level' => '1', 'DepName' => 'Default Dep', 'Email' => 'me@me.com'];
+                    break;
+                case '54464':
+                    $data = ['UserID' => $userid, 'Level' => '4', 'DepName' => 'Default Dep', 'Email' => 'son.29190@lacty.com.vn'];
+                    break;
+                case '13456':
+                    $data = ['UserID' => $userid, 'Level' => '4', 'DepName' => 'KH', 'Email' => 'vue@lacty.com.vn'];
+                    break;
+                default:
+                    $data = ['UserID' => $userid, 'Level' => null, 'DepName' => null, 'Email' => null];
+                    break;
+            }
+        }
+
+        echo json_encode($data);
+        exit;
+    }
+    // { deptcode: string; deptname: string; deptname_vn: string }
+    if ($_GET['api'] == 'getDept') {
+        $query = "SELECT 
+                kaizen_dept as deptcode
+            FROM PPH_Kaizen_Email_Setup
+			Group by  kaizen_dept ";
+        $result = odbc_exec($conn_eip, $query);
+        $data = array();
+        while ($row = odbc_fetch_array($result)) {
+            $data[] = $row;
+        }
+
+        echo json_encode($data);
+    }
+
 }
 
 
@@ -1884,11 +1938,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $to = $data['to'];
         $id = $data['id_report'];
         $cc = $data['cc'];
+        $trial_date = $data['trial_date'];
 
         $toEmail = [];
         $ccEmail = [];
 
+        $dept=[];
+
+        //$to = ['toan.45354@lacty2.com.vn'];
+
         foreach ($to as $key => $value) {
+            $dept[] = $value['department'];
             $qry = "SELECT Email 
             FROM PPH_Kaizen_Adjustment_Department_CFM 
             WHERE Email = '" . $value['email'] . "'
@@ -1906,6 +1966,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $toEmail[] = $value['email'];
             }
         }
+
+        $qr ="SELECT * FROM PPH_Kaizen_Adjustment_Report
+        WHERE ID = ?";
+
+        $stmt = odbc_prepare($conn_eip, $qr);
+        $exec = odbc_execute($stmt, [$id]);
+
+        $row = odbc_fetch_array($stmt);
+
+        $improvementTopic = $row['Title_Improve'];
+        $participants = $dept;
+        $timeText = $trial_date;
+    
+
+        // Tạo HTML danh sách đơn vị (không dùng arrow function để tránh lỗi version PHP)
+        $unitListHtml = '<ul style="margin:0;padding-left:18px;">';
+        foreach ($participants as $x) {
+            $unitListHtml .= '<li>' . htmlspecialchars($x) . '</li>';
+        }
+        $unitListHtml .= '</ul>';
+
+        $subject = 'Thông tin cải tiến: Tham gia buổi thử nghiệm ý tưởng đề xuất cải tiến';
+        $body = '<!DOCTYPE html>
+                <html lang="vi">
+                <head><meta charset="UTF-8"></head>
+                <body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111;line-height:1.5;">
+                <p>Dear all,</p>
+
+                <p>Vui lòng xem thông tin bên dưới là thông tin thử nghiệm của đề xuất cải tiến.
+                Mời các đơn vị liên quan bên dưới tham gia trực tiếp thử nghiệm.</p>
+
+                <table cellpadding="6" cellspacing="0" style="border-collapse:collapse;max-width:720px;width:100%;">
+                    <tr>
+                    <td style="width:160px;font-weight:bold;">Vấn đề cải tiến:</td>
+                    <td>' . $improvementTopic . '</td>
+                    </tr>
+                    <tr>
+                    <td style="font-weight:bold;">Đơn vị tham gia:</td>
+                    <td>' . $unitListHtml . '</td>
+                    </tr>
+                    <tr>
+                    <td style="font-weight:bold;">Thời gian:</td>
+                    <td>' . $timeText . '</td>
+                    </tr>
+                    <tr>
+                </table>
+
+                <p>Kính mong các đơn vị liên quan tham gia đúng thời gian buổi thử nghiệm.</p>
+
+                <p>Nếu anh/chị có thắc mắc vui lòng liên hệ FME.<br/>
+                Số điện thoại nội bộ: 114</p>
+
+                <p>Xin cảm ơn,<br/>FME</p>
+                </body>
+        </html>';
+        // Gửi email
+        $sendEmail = create_email($toEmail, $ccEmail, $subject, $body, $xlc);
         echo json_encode(['Msg' => 'Successfully.']);
     }
 
@@ -2173,40 +2290,40 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
         // Xử lý dữ liệu và trả về kết quả
     }
 
+    // id: 'A1', userId: '50001', username: 'HOA HONG', email: 'a1_leader@company.com', department: 'A1'
 
     if ($_GET['api'] == 'cfmDepartment') {
         $json = file_get_contents("php://input");
         $data = json_decode($json, true);
+
         $departmentId = $data['department'];
         $id_report = $_GET['id_report'];
         $userId = $data['userId'];
         $email = $data['email'];
-        $status = $data['status'];
-
+        $status = (string) $data['status'];
         $date = date('Y-m-d H:i:s');
 
-        $sql = "SELECT * FROM PPH_Kaizen_Adjustment_Department_CFM 
-        WHERE ID_Report = '" . $id_report . "' 
-        AND Dept = '" . $departmentId . "' 
-        AND Email = '" . $email . "'
-        ";
+        $checkSql = "SELECT * FROM PPH_Kaizen_Adjustment_Department_CFM 
+                 WHERE ID_Report = '$id_report' 
+                   AND Dept = '$departmentId'
+                   AND Email = '$email'";
 
+        $rs = odbc_exec($conn_eip, $checkSql);
 
-        $rs = odbc_exec($conn_eip, $sql);
-
-        if (odbc_num_rows($rs) > 0) {
+        if ($rs && odbc_num_rows($rs) > 0) {
             $sql = "UPDATE PPH_Kaizen_Adjustment_Department_CFM 
-            SET Status = '" . $status . "',
-            Date_Confirm= '" . $date . "'
-            WHERE ID_Report = '" . $id_report . "' 
-            AND Dept = '" . $departmentId . "'";
+                SET Status = '$status',
+                    Date_Confirm = '$date'
+                WHERE ID_Report = '$id_report' 
+                  AND Dept = '$departmentId'";
         }
+
         $rs = odbc_exec($conn_eip, $sql);
 
-        if ($rs > 0) {
-            echo json_encode(array('Msg' => "Successfully."));
+        if ($rs !== false) {
+            echo json_encode(['Msg' => "Successfully." . $checkSql]);
         } else {
-            echo json_encode(array('Msg' => 'Fail.' . odbc_errormsg()));
+            echo json_encode(['Msg' => "Fail. " . odbc_errormsg()]);
         }
     }
 }
