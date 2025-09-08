@@ -5,10 +5,10 @@ header("Content-Type: application/json");
 
 //TODO:End Clear Cache
 
-$host = '192.168.30.19';
+$host = '192.168.0.96\eipsystem';
 $db_name = 'EIP';
-$username = 'lacty';
-$password = 'lacty';
+$username = 'sa';
+$password = 'Su@gor_pet88';
 $conn_eip = null;
 
 try {

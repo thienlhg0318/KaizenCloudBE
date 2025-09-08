@@ -6,6 +6,7 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Expose-Headers: x-total-count');
 header('Content-Type: application/json; charset=utf-8');
+header("Referrer-Policy: strict-origin-when-cross-origin");
 require 'conn.php';
 require_once 'C:\wamp\www\KaizenCloud\PHPExcel\Classes\PHPExcel.php';
 include 'C:\wamp\www\KaizenCloud\PHPMailer\PHPMailerAutoload.php';
@@ -176,21 +177,26 @@ function create_email($to, $cc, $subject, $body, $tempFile = null)
 {
     $mail = new PHPMailer(true);
     try {
-        // Cấu hình SMTP
+        $mail->CharSet = 'utf-8';
         $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
+
+        $mail->SMTPDebug = 0;
+
+        $mail->Debugoutput = 'html';
+
         $mail->SMTPAuth = true;
-        $mail->Username = 'thienlhg0318@gmail.com'; // Gmail của bạn
-        $mail->Password = 'xwqd feja jtbn vojn';   // App password Gmail
-        //$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
-        $mail->CharSet = 'UTF-8';
 
+        $mail->Host = "192.168.60.8";
 
+        $mail->Hostname = 'tyxuan2.com.vn';
 
+        $mail->Port = 25; //465 587
 
-        // Người gửi
-        $mail->setFrom('thienlhg0318@gmail.com');
+        $mail->Username = "report.agent@tyxuan2.com.vn";
+
+        $mail->Password = "MIS@tyxuan2";
+
+        $mail->setFrom('report.agent@tyxuan2.com.vn', 'EIP SYSTEM - LHG');
 
         if (!empty($to)) {
             if (is_array($to)) {
@@ -243,11 +249,16 @@ function create_email($to, $cc, $subject, $body, $tempFile = null)
 
         $mail->send();
 
+
+        @unlink($tempFile); // xóa file, dùng @ để tránh lỗi nếu không tồn tại
+
+
         return ['Msg' => 'Gửi email thành công'];
     } catch (Exception $e) {
         return ['Msg' => 'Gửi email thất bại.'];
     }
 }
+
 
 function generateExcelReport($data, $month = '', $year = '')
 {
@@ -461,13 +472,13 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         //Lấy total 
         //Lấy total 
         if ($type == "" && $dept != "All" && $status != "All" && $status != "REQUIRECF") {
-            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and Dept ='" . $dept . "' and Quality = '" . $status . "' and PCI_Status = 'DONE' ";
+            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and Dept ='" . $dept . "' and ME_Status = '" . $status . "' and PCI_Status = 'DONE' ";
         } elseif ($type == "" && $dept != "All" && $status == "REQUIRECF") {
-            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and Dept ='" . $dept . "' and Quality is null and PCI_Status = 'DONE' ";
+            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and Dept ='" . $dept . "' and ME_Status is null and PCI_Status = 'DONE' ";
         } elseif ($type == "" && $dept == "All" && $status == "REQUIRECF") {
-            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and Quality is null and PCI_Status = 'DONE' ";
+            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and ME_Status is null and PCI_Status = 'DONE' ";
         } elseif ($type == "" && $dept == "All" && $status != "All") {
-            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and Quality = '" . $status . "' and PCI_Status = 'DONE'";
+            $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'  and ME_Status = '" . $status . "' and PCI_Status = 'DONE'";
         } elseif ($type == "" && $dept == "All" && $status == "All") {
             $sql = "SELECT COUNT(*) total FROM PPH_Kaizen_Adjustment_Report where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "'and PCI_Status = 'DONE'";
         } elseif ($type == "" && $dept != "All" && $status == "All") {
@@ -481,13 +492,13 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         $total = odbc_result($rs, 1);
         //
         if ($type == "" && $dept != "All" && $status != "All" && $status != "REQUIRECF") {
-            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.Dept ='" . $dept . "' and PKAR.Quality = '" . $status . "' and PKAR.PCI_Status = 'DONE'  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
+            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.Dept ='" . $dept . "' and PKAR.ME_Status = '" . $status . "' and PKAR.PCI_Status = 'DONE'  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
         } elseif ($type == "" && $dept != "All" && $status == "REQUIRECF") {
-            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.Dept ='" . $dept . "' and PKAR.PCI_Status = 'DONE' and PKAR.Quality is null  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
+            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.Dept ='" . $dept . "' and PKAR.PCI_Status = 'DONE' and PKAR.ME_Status is null  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
         } elseif ($type == "" && $dept == "All" && $status == "REQUIRECF") {
-            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.PCI_Status = 'DONE'  and PKAR.Quality is null  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
+            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.PCI_Status = 'DONE'  and PKAR.ME_Status is null  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
         } elseif ($type == "" && $dept == "All" && $status != "All") {
-            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.PCI_Status = 'DONE'  and PKAR.Quality = '" . $status . "'  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
+            $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.PCI_Status = 'DONE'  and PKAR.ME_Status = '" . $status . "'  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
         } elseif ($type == "" && $dept == "All" && $status == "All") {
             $getDataRaw = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where YEAR(KDate) = '" . $y . "' and MONTH(KDate) = '" . $m . "' and PKAR.PCI_Status = 'DONE'  ORDER BY ID OFFSET " . $offset . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
         } elseif ($type == "" && $dept != "All" && $status == "All") {
@@ -510,6 +521,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
 
 
+    //get data for library
     //get data for library
     if ($_GET['api'] == 'getDataLibrary') {
         $dt = $_GET['dt'];
@@ -705,10 +717,14 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     // }
     if ($_GET['api'] == 'getReport') {
         $id = $_GET['id'];
-        $query_report = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number 
-        FROM PPH_Kaizen_Adjustment_Report PKAR
-        LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode where id='" . $id . "'
-        ";
+        // $query_report =  "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number, dbo.fTCVNToUnicode(dbo.fChuyenCoDauThanhKhongDau(DS.Person_Name)) Person_Name FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode LEFT JOIN HRISPROCE.HRIS.DBO.Data_Person DS ON DS.Person_ID =PKAR.PCI_Status_CFMID COLLATE Chinese_Taiwan_Stroke_CI_AS where PKAR.id='" . $id . "'";
+
+        $query_report = "SELECT PKAR.*,PKAD.deptname,'H' + ' ' +  SUBSTRING(CONVERT(varchar(4),YEAR(KDate)),3,2) + '-' + case when len(MONTH(KDate)) = 1 then '0' + CONVERT(varchar(2),MONTH(KDate)) else CONVERT(varchar(2),MONTH(KDate)) end +  ' ' + ISNULL(Dept , '') + ' ' + case when len(Rf_Number) = 1 then '0000' + CONVERT(varchar(1),Rf_Number) when len(Rf_Number) = 2 then '000' + CONVERT(varchar(2),Rf_Number) when len(Rf_Number) = 3 then '00' + CONVERT(varchar(3),Rf_Number) when len(Rf_Number) = 4 then '0' + CONVERT(varchar(4),Rf_Number) when len(Rf_Number) = 5 then CONVERT(varchar(5),Rf_Number) ELSE '' END  as Refferen_Number,
+            (SELECT dbo.fTCVNToUnicode(dbo.fChuyenCoDauThanhKhongDau(Person_Name)) FROM HRISPROCE.HRIS.DBO.Data_Person  WHERE  Person_ID COLLATE Chinese_Taiwan_Stroke_CI_AS = PKAR.PCI_Status_CFMID) PCI_Name,
+            (SELECT dbo.fTCVNToUnicode(dbo.fChuyenCoDauThanhKhongDau(Person_Name)) FROM HRISPROCE.HRIS.DBO.Data_Person  WHERE  Person_ID COLLATE Chinese_Taiwan_Stroke_CI_AS= PKAR.ME_Status_CFMID) ME_Name
+            FROM PPH_Kaizen_Adjustment_Report PKAR LEFT JOIN PPH_Kaizen_Adjustment_Department PKAD ON PKAR.Dept = PKAD.deptcode 
+            where PKAR.id='" . $id . "'";
+
         $result_report = odbc_exec($conn_eip, $query_report);
         if (odbc_num_rows($result_report) > 0) {
             $obj = odbc_fetch_object($result_report); // Lấy một đối tượng từ kết quả truy vấn
@@ -815,8 +831,12 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         // } else if ($date == 'year') {
         //     $query = "SELECT Problem_Improve,CONVERT(decimal(10,2),Item) * 100 / TOTAL* 1.0  [PERCENT] FROM (SELECT Problem_Improve,COUNT(*) Item,(SELECT COUNT(*) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE YEAR(KDate) = YEAR(GETDATE()) AND Status ='DONE' ) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE YEAR(KDate) = YEAR(GETDATE()) AND Status ='DONE' GROUP BY Problem_Improve)A order by Problem_Improve";
         // }
+        if ($month == 'ALL') {
+            $query = "SELECT Problem_Improve,CONVERT(decimal(10,2),Item) * 100 / TOTAL* 1.0  [PERCENT] FROM (SELECT Problem_Improve,COUNT(*) Item,(SELECT COUNT(*) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE  YEAR(KDate) = '" . $year . "' AND ME_Status ='DONE' ) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE  YEAR(KDate) = '" . $year . "' AND Status ='DONE' GROUP BY Problem_Improve)A order by Problem_Improve";
+        } else {
+            $query = "SELECT Problem_Improve,CONVERT(decimal(10,2),Item) * 100 / TOTAL* 1.0  [PERCENT] FROM (SELECT Problem_Improve,COUNT(*) Item,(SELECT COUNT(*) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE MONTH(KDate) = '" . $month . "' AND YEAR(KDate) = '" . $year . "' AND ME_Status ='DONE' ) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE MONTH(KDate) = '" . $month . "' and YEAR(KDate) = '" . $year . "' AND ME_Status ='DONE' GROUP BY Problem_Improve)A order by Problem_Improve";
+        }
 
-        $query = "SELECT Problem_Improve,CONVERT(decimal(10,2),Item) * 100 / TOTAL* 1.0  [PERCENT] FROM (SELECT Problem_Improve,COUNT(*) Item,(SELECT COUNT(*) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE MONTH(KDate) = '" . $month . "' AND YEAR(KDate) = '" . $year . "' AND ME_Status ='DONE' ) TOTAL FROM PPH_Kaizen_Adjustment_Report WHERE MONTH(KDate) = '" . $month . "' and YEAR(KDate) = '" . $year . "' AND Status ='DONE' GROUP BY Problem_Improve)A order by Problem_Improve";
 
         $result = odbc_exec($conn_eip, $query);
 
@@ -1007,16 +1027,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         echo json_encode($data);
     }
 
-    if ($_GET['api'] == 'getSeason') {
-        $query = "SELECT        id, from_month, to_month, season, userID, userdate FROM PPH_Kaizen_Season_Setup";
-        $result = odbc_exec($conn_eip, $query);
-        $data = array();
-        while ($row = odbc_fetch_array($result)) {
-            $data[] = $row;
-        }
-        http_response_code(200);
-        echo json_encode($data);
-    }
+
 
     if ($_GET['api'] == 'getReportOfYearMonth') {
 
@@ -1025,24 +1036,30 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
         // Get department stats with done/failed percentages
         $query = "SELECT 
-                        K.deptname,
-                        T.target,
-                        COUNT(*) as TotalCases,
-                        SUM(CASE WHEN ME_Status = 'DONE' THEN 1 ELSE 0 END) as DoneCases,
-                        SUM(CASE WHEN ME_Status = 'ONGOING' THEN 1 ELSE 0 END) as OngoingCases,
-                        CAST(CAST(SUM(CASE WHEN ME_Status = 'DONE' THEN 1 ELSE 0 END) AS FLOAT) * 100 / 
-                            CAST(COUNT(*) AS FLOAT) AS DECIMAL(10,2)) as DonePercent,
-                        SUM(CASE WHEN Status = 'FAIL' THEN 1 ELSE 0 END) as FailedCases,
-                        CAST(CAST(SUM(CASE WHEN Status = 'FAIL' THEN 1 ELSE 0 END) AS FLOAT) * 100 / 
-                            CAST(COUNT(*) AS FLOAT) AS DECIMAL(10,2)) as FailPercent
-                    FROM PPH_Kaizen_Adjustment_Report r
-                    JOIN PPH_Kaizen_Monthly_Case_Target T 
-                        ON T.department = r.Dept
-                    JOIN PPH_Kaizen_Adjustment_Department k
-                        ON k.deptcode = r.Dept
-                    WHERE YEAR(KDate) = $year AND MONTH(KDate) = $month
-                    AND T.year = $year AND T.month = $month
-                    GROUP BY K.deptname, T.target";
+                K.deptname,
+                ISNULL(T.target, 0) AS target,
+                COUNT(*) AS TotalCases,
+                SUM(CASE WHEN r.ME_Status = 'DONE' THEN 1 ELSE 0 END) AS DoneCases,
+                SUM(CASE WHEN r.ME_Status = 'ONGOING' THEN 1 ELSE 0 END) AS OngoingCases,
+                CAST(
+                    CAST(SUM(CASE WHEN r.ME_Status = 'DONE' THEN 1 ELSE 0 END) AS FLOAT) * 100 / 
+                    NULLIF(CAST(COUNT(*) AS FLOAT), 0) 
+                AS DECIMAL(10,2)) AS DonePercent,
+                SUM(CASE WHEN r.Status = 'FAIL' THEN 1 ELSE 0 END) AS FailedCases,
+                CAST(
+                    CAST(SUM(CASE WHEN r.Status = 'FAIL' THEN 1 ELSE 0 END) AS FLOAT) * 100 /
+                    NULLIF(CAST(COUNT(*) AS FLOAT), 0) 
+                AS DECIMAL(10,2)) AS FailPercent
+            FROM PPH_Kaizen_Adjustment_Report r
+            JOIN PPH_Kaizen_Adjustment_Department k
+                ON k.deptcode = r.Dept
+            LEFT JOIN PPH_Kaizen_Monthly_Case_Target T 
+                ON T.department = r.Dept
+            AND T.year = '$year'
+            AND T.month = '$month'   
+            WHERE YEAR(r.KDate) = '$year' 
+            AND MONTH(r.KDate) = '$month' 
+            GROUP BY K.deptname, T.target";
 
         $result = odbc_exec($conn_eip, $query);
         $data = array();
@@ -1206,6 +1223,9 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
                 case '13456':
                     $data = ['UserID' => $userid, 'Level' => '4', 'DepName' => 'KH', 'Email' => 'vue@lacty.com.vn'];
                     break;
+                case '68297':
+                    $data = ['UserID' => $userid, 'Level' => '4', 'DepName' => 'KH', 'Email' => 'vue@lacty.com.vn'];
+                    break;
                 default:
                     $data = ['UserID' => $userid, 'Level' => null, 'DepName' => null, 'Email' => null];
                     break;
@@ -1230,6 +1250,65 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         echo json_encode($data);
     }
 
+    if ($_GET['api'] == 'getSeason') {
+        $query = "SELECT        id, from_month, to_month, season, userID, userdate FROM PPH_Kaizen_Season_Setup";
+        $result = odbc_exec($conn_eip, $query);
+        $data = array();
+        while ($row = odbc_fetch_array($result)) {
+            $data[] = $row;
+        }
+        http_response_code(200);
+        echo json_encode($data);
+    }
+    if ($_GET['api'] == 'getSeasonCampaign') {
+        $query = "SELECT DISTINCT season FROM PPH_Kaizen_Season_Campaign AS pksc";
+        $result = odbc_exec($conn_eip, $query);
+        $data = array();
+        while ($row = odbc_fetch_array($result)) {
+            $data[] = $row;
+        }
+        http_response_code(200);
+        echo json_encode($data);
+    }
+
+    if ($_GET['api'] == 'getCampaign') {
+        $season = $_GET['season'];
+        $query = "SELECT * FROM PPH_Kaizen_Season_Campaign AS pksc WHERE pksc.season = '" . $season . "'";
+        $result = odbc_exec($conn_eip, $query);
+        $data = array();
+        while ($row = odbc_fetch_array($result)) {
+            $data[] = $row;
+        }
+        http_response_code(200);
+        echo json_encode($data);
+    }
+    if ($_GET["api"] == "getReportByDept") {
+        $id = $_GET["id"];
+
+        $qr = "SELECT kaizen_dept FROM PPH_Kaizen_Email_Setup
+        WHERE id = ?";
+
+        $stmt = odbc_prepare($conn_eip, $qr);
+        $exec = odbc_execute($stmt, [$id]);
+
+        if ($exec && $row = odbc_fetch_array($stmt)) {
+            $sql = "SELECT * FROM PPH_Kaizen_Adjustment_Report WHERE ID IN
+            (SELECT ID_Report
+            FROM PPH_Kaizen_Adjustment_Department_CFM 
+            WHERE Dept = ?
+            GROUP BY ID_Report,UserID,Dept)";
+            $stmt = odbc_prepare($conn_eip, $sql);
+            $exec = odbc_execute($stmt, $row);
+            $data = array();
+            while ($row = odbc_fetch_array($stmt)) {
+                $data[] = $row;
+            }
+            http_response_code(200);
+            echo json_encode($data);
+        } else {
+            echo json_encode(["Msg" => "ID does not exist !"]);
+        }
+    }
 }
 
 
@@ -1734,7 +1813,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
     }
 
-    //upload  video
+
 
     //upload  smartTool
     if ($_GET['api'] == 'UploadSmartTool') {
@@ -1840,7 +1919,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Chuyển JSON thành mảng
         $data = json_decode($json, true);
-        echo json_encode($data);
 
         $actual = 0;
         $target = 0;
@@ -1858,17 +1936,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $xlc = generateExcelReport($data, $month, $year);
 
         // lấy dử liệu email từ data
-        // $toEmail = getEmail($conn_eip, "trial_stage", "TO");
-        // $ccEmail = getEmail($conn_eip, "auto_report", "CC");
-
-        // echo json_encode($toEmail);
-        // echo json_encode($ccEmail);
-
-        // Thông tin email
-        //$to = ['toan.45354@lacty2.com.vn'];
-        $to = ['thien879811@gmail.com'];
-        $cc = null;
-
+        $toEmail = getEmail($conn_eip, "trial_stage", "TO");
+        $ccEmail = getEmail($conn_eip, "auto_report", "CC");
 
 
         $subject = "Kaizen Monthly Report - {$year} {$month}";
@@ -1908,12 +1977,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </p>";
 
         // Gửi email
-        // $sendEmail = create_email($to, $cc, $subject, $body, $xlc);
+       $sendEmail = create_email($toEmail, $ccEmail, $subject, $body, $xlc);
 
-        // // Xóa file Excel sau khi gửi
-        // if (file_exists($xlc)) {
-        //     unlink($xlc);
-        // }
+        // Xóa file Excel sau khi gửi
+        if (file_exists($xlc)) {
+            unlink($xlc);
+        }
 
         // Nếu có month thì update DB
         if (!empty($month)) {
@@ -1943,9 +2012,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $toEmail = [];
         $ccEmail = [];
 
-        $dept=[];
+        $dept = [];
 
-        //$to = ['toan.45354@lacty2.com.vn'];
+
 
         foreach ($to as $key => $value) {
             $dept[] = $value['department'];
@@ -1967,7 +2036,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
 
-        $qr ="SELECT * FROM PPH_Kaizen_Adjustment_Report
+        $qr = "SELECT * FROM PPH_Kaizen_Adjustment_Report
         WHERE ID = ?";
 
         $stmt = odbc_prepare($conn_eip, $qr);
@@ -1978,7 +2047,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $improvementTopic = $row['Title_Improve'];
         $participants = $dept;
         $timeText = $trial_date;
-    
+
 
         // Tạo HTML danh sách đơn vị (không dùng arrow function để tránh lỗi version PHP)
         $unitListHtml = '<ul style="margin:0;padding-left:18px;">';
@@ -2013,6 +2082,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <tr>
                 </table>
 
+                <a href="http://192.168.30.169:3000/KaizenCloud/#/KaizenCloud/rawData/dept?fromEmail=true&reportId=' . $id . '">Đường Link</a>
+
                 <p>Kính mong các đơn vị liên quan tham gia đúng thời gian buổi thử nghiệm.</p>
 
                 <p>Nếu anh/chị có thắc mắc vui lòng liên hệ FME.<br/>
@@ -2023,9 +2094,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </html>';
         // Gửi email
         $sendEmail = create_email($toEmail, $ccEmail, $subject, $body, $xlc);
+
+        $qr = "UPDATE PPH_Kaizen_Adjustment_Report
+        SET ME_status = 'ONGOING'
+        WHERE ID = ?";
+
+        $stmt = odbc_prepare($conn_eip, $qr);
+        $exec = odbc_execute($stmt, [$id]);
+
         echo json_encode(['Msg' => 'Successfully.']);
     }
 
+
+    if ($_GET['api'] == 'Login') {
+        $userID = $_POST['userID'];
+        $pw = $_POST['pw'];
+        $sql = "select b.userid, USERNAME, pkau.[Level] role, pkes.email from LIY_ERP.LIY_ERP.dbo.Busers b 
+            LEFT JOIN PPH_Kaizen_Adjustment_User AS pkau ON b.userid COLLATE SQL_Latin1_General_CP1_CI_AS = pkau.UserID
+            LEFT JOIN PPH_Kaizen_Email_Setup AS pkes ON pkau.UserID = pkes.id where b.USERID = '" . $userID . "' and pwd = '" . $pw . "'";
+        //  $sql  = "select userid, USERNAME from LIY_ERP.LIY_ERP.dbo.Busers where USERID = '51401' and pwd = '123'";
+
+        // echo json_encode(array('Info' => $sql));
+        // die;
+        $rs = odbc_exec($conn_eip, $sql);
+        if (odbc_num_rows($rs) > 0) {
+            $data = array();
+            while ($row = odbc_fetch_array($rs)) {
+                $data[] = $row;
+            }
+            echo json_encode($data);
+        } else {
+            //   echo json_encode(array('Msg' => $sql));
+            echo json_encode(array('Msg' => 'Đăng nhập không thành công!'));
+        }
+    }
 }
 
 // Handle DELETE request from ReactJS
@@ -2300,6 +2402,7 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
         $id_report = $_GET['id_report'];
         $userId = $data['userId'];
         $email = $data['email'];
+        $username = $data['username'];
         $status = (string) $data['status'];
         $date = date('Y-m-d H:i:s');
 
@@ -2313,7 +2416,8 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
         if ($rs && odbc_num_rows($rs) > 0) {
             $sql = "UPDATE PPH_Kaizen_Adjustment_Department_CFM 
                 SET Status = '$status',
-                    Date_Confirm = '$date'
+                    Date_Confirm = '$date',
+                    Name = '$username'
                 WHERE ID_Report = '$id_report' 
                   AND Dept = '$departmentId'";
         }
@@ -2321,7 +2425,7 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
         $rs = odbc_exec($conn_eip, $sql);
 
         if ($rs !== false) {
-            echo json_encode(['Msg' => "Successfully." . $checkSql]);
+            echo json_encode(['Msg' => "Successfully."]);
         } else {
             echo json_encode(['Msg' => "Fail. " . odbc_errormsg()]);
         }
